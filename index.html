@@ -728,19 +728,23 @@ Responda APENAS JSON válido, sem nenhum texto fora, sem markdown:
 }`;
 
   try {
-    const res  = await fetch('/api/chat', {
-  method:'POST',
-  headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:1200, messages:[{role:'user',content:prompt}] })
-    });
-    const data = await res.json();
-    const text = (data.content||[]).map(i=>i.text||'').join('');
-    const parsed = JSON.parse(text.replace(/```json|```/g,'').trim());
+  const res = await fetch('/api/chat', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 1200,
+    messages: [{ role: 'user', content: prompt }]
+  })
+});
+const data = await res.json();
 
-    document.getElementById('out-titulo').textContent = parsed.titulo;
-    document.getElementById('out-thumb-text').textContent   = parsed.thumbnail_texto;
-    document.getElementById('out-thumb-visual').textContent = parsed.thumbnail_visual;
+// debug temporário — remove depois
+console.log('RAW RESPONSE:', JSON.stringify(data));
 
+const text = (data.content || []).map(i => i.text || '').join('');
+const clean = text.replace(/```json|```/g, '').trim();
+const parsed = JSON.parse(clean);
     const alts = document.getElementById('out-alts');
     alts.innerHTML = '';
     (parsed.titulos_alt||[]).forEach(t => {
