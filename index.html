@@ -6,209 +6,126 @@
 <title>Curadoria YouTube — Jornada Empreendedora</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap');
-
   :root {
-    --bg: #0d0d0d; --bg2: #141414; --bg3: #1c1c1c;
-    --border: #2a2a2a; --border2: #333;
-    --accent: #e8ff47; --accent2: #ff6b35; --accent3: #7c6dfa;
-    --text: #f0f0f0; --muted: #666; --muted2: #444;
-    --green: #5dbb63; --green-bg: #0d1f0d; --green-border: #1a3d1a;
+    --bg:#0d0d0d;--bg2:#141414;--bg3:#1c1c1c;--border:#2a2a2a;--border2:#333;
+    --accent:#e8ff47;--accent2:#ff6b35;--accent3:#7c6dfa;
+    --text:#f0f0f0;--muted:#666;--muted2:#444;
+    --green:#5dbb63;--green-bg:#0d1f0d;--green-border:#1a3d1a;
   }
-
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; min-height:100vh; }
-
-  /* HEADER */
-  header {
-    border-bottom:1px solid var(--border); padding:18px 28px;
-    display:flex; align-items:center; justify-content:space-between;
-    position:sticky; top:0; background:var(--bg); z-index:100;
-  }
-  .logo { font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:2px; color:var(--accent); }
-  .logo span { color:var(--muted); font-size:11px; font-family:'DM Mono',monospace; margin-left:10px; letter-spacing:0; vertical-align:middle; }
-  nav { display:flex; gap:3px; }
-  nav button {
-    background:none; border:1px solid transparent; color:var(--muted);
-    font-family:'DM Mono',monospace; font-size:10px; letter-spacing:1px;
-    padding:7px 12px; cursor:pointer; border-radius:4px; text-transform:uppercase; transition:all .2s;
-  }
-  nav button.active { color:var(--accent); border-color:var(--accent); background:rgba(232,255,71,.05); }
-  nav button:hover:not(.active) { color:var(--text); border-color:var(--border2); background:var(--bg3); }
-
-  /* LAYOUT */
-  main { max-width:1120px; margin:0 auto; padding:36px 28px; }
-  .section { display:none; }
-  .section.active { display:block; }
-  h2 { font-family:'Bebas Neue',sans-serif; font-size:34px; letter-spacing:2px; margin-bottom:4px; }
-  .subtitle { color:var(--muted); font-size:12px; margin-bottom:28px; font-family:'DM Mono',monospace; }
-
-  /* CARDS */
-  .card { background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:22px; margin-bottom:14px; }
-  .card:hover { border-color:var(--border2); }
-  .card-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; }
-
-  /* TAGS */
-  .tag { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:1px; text-transform:uppercase; padding:3px 8px; border-radius:3px; }
-  .tag { background:var(--bg3); color:var(--muted); border:1px solid var(--border); }
-  .tag.yellow { background:#1f1d00; color:var(--accent); border-color:#3a3800; }
-  .tag.green { background:var(--green-bg); color:var(--green); border:1px solid var(--green-border); }
-  .tag.orange { background:#1f0d00; color:var(--accent2); border-color:#3a1a00; }
-  .tag.purple { background:#100e1f; color:var(--accent3); border-color:#201c3a; }
-
-  /* GRIDS */
-  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-  .grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
-  @media(max-width:720px){ .grid-2,.grid-3{ grid-template-columns:1fr; } }
-
-  /* METRICS */
-  .metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:28px; }
-  .metric { background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:16px 18px; }
-  .metric-value { font-family:'Bebas Neue',sans-serif; font-size:34px; line-height:1; color:var(--accent); }
-  .metric-label { font-size:11px; color:var(--muted); margin-top:4px; }
-
-  /* BLOCOS ESTRUTURA */
-  .blocos { display:grid; grid-template-columns:1fr 1fr 1fr; gap:0; border:1px solid var(--border); border-radius:8px; overflow:hidden; margin-bottom:28px; }
-  .bloco { padding:18px 20px; border-right:1px solid var(--border); }
-  .bloco:last-child { border:none; }
-  .bloco-num { font-family:'Bebas Neue',sans-serif; font-size:44px; line-height:1; margin-bottom:4px; }
-  .bloco-num.e1{color:var(--accent)} .bloco-num.e2{color:var(--accent2)} .bloco-num.e3{color:var(--accent3)}
-  .bloco-title { font-size:13px; font-weight:600; margin-bottom:6px; }
-  .bloco-desc { font-size:12px; color:var(--muted); line-height:1.6; }
-  .bloco-time { font-family:'DM Mono',monospace; font-size:10px; color:var(--muted2); margin-top:8px; text-transform:uppercase; letter-spacing:1px; }
-
-  /* FORM */
-  label { display:block; font-family:'DM Mono',monospace; font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin-bottom:7px; margin-top:18px; }
-  label:first-child { margin-top:0; }
-  input[type="text"], input[type="password"] {
-    width:100%; background:var(--bg3); border:1px solid var(--border); border-radius:6px;
-    color:var(--text); font-family:'DM Sans',sans-serif; font-size:14px; padding:11px 14px;
-    outline:none; transition:border-color .2s;
-  }
-  input:focus { border-color:var(--accent); }
-
-  /* TEXTAREA */
-  .field-wrap { position:relative; }
-  textarea {
-    width:100%; background:var(--bg3); border:1px solid var(--border); border-radius:6px;
-    color:var(--text); font-family:'DM Sans',sans-serif; font-size:14px; padding:14px;
-    resize:vertical; outline:none; transition:border-color .2s; line-height:1.6;
-  }
-  textarea:focus { border-color:var(--accent); }
-  textarea::placeholder { color:var(--muted2); }
-  textarea.short { min-height:80px; }
-  textarea.medium { min-height:120px; }
-  textarea.tall { min-height:160px; }
-
-  /* MIC BUTTON */
-  .mic-btn {
-    position:absolute; right:10px; bottom:10px;
-    width:36px; height:36px; border-radius:50%;
-    border:1px solid var(--border); background:var(--bg2);
-    cursor:pointer; display:flex; align-items:center; justify-content:center;
-    transition:all .2s; color:var(--muted); font-size:16px;
-  }
-  .mic-btn:hover { border-color:var(--accent); color:var(--accent); }
-  .mic-btn.recording { background:rgba(255,60,60,.15); border-color:#ff3c3c; color:#ff3c3c; animation:pulse 1s infinite; }
-  .mic-status { font-family:'DM Mono',monospace; font-size:10px; color:var(--muted); margin-top:5px; min-height:16px; }
-  .mic-status.active { color:#ff3c3c; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
-
-  /* BUTTONS */
-  .btn {
-    background:var(--accent); color:#000; border:none; border-radius:6px;
-    font-family:'DM Sans',sans-serif; font-weight:600; font-size:14px;
-    padding:11px 22px; cursor:pointer; letter-spacing:.4px; transition:all .2s;
-    display:inline-flex; align-items:center; gap:8px;
-  }
-  .btn:hover { background:#d4eb2e; transform:translateY(-1px); }
-  .btn:active { transform:translateY(0); }
-  .btn:disabled { opacity:.35; cursor:not-allowed; transform:none; }
-  .btn-ghost {
-    background:none; border:1px solid var(--border); color:var(--text);
-    border-radius:6px; font-family:'DM Sans',sans-serif; font-size:13px;
-    padding:9px 16px; cursor:pointer; transition:all .2s;
-  }
-  .btn-ghost:hover { border-color:var(--muted); background:var(--bg3); }
-  .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:14px; }
-
-  /* LOADING */
-  .loading { display:none; align-items:center; gap:10px; color:var(--muted); font-size:12px; font-family:'DM Mono',monospace; margin-top:14px; }
-  .loading.visible { display:flex; }
-  .spinner { width:15px; height:15px; border:2px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin .7s linear infinite; }
-  @keyframes spin { to{transform:rotate(360deg)} }
-
-  /* OUTPUT BOX */
-  .output-box { background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:24px; margin-top:18px; display:none; }
-  .output-box.visible { display:block; }
-  .out-section { margin-bottom:22px; }
-  .out-section h4 { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:10px; padding-bottom:7px; border-bottom:1px solid var(--border); }
-  .out-titulo { font-family:'Bebas Neue',sans-serif; font-size:26px; letter-spacing:1px; color:var(--accent); line-height:1.2; margin-bottom:6px; }
-  .out-text { font-size:14px; color:#ccc; line-height:1.7; }
-  .alt-title { font-size:13px; color:var(--muted); padding:4px 0; border-bottom:1px solid var(--border); }
-
-  /* SCRIPT BLOCK */
-  .script-bloco { background:var(--bg2); border:1px solid var(--border); border-radius:6px; padding:18px; margin-bottom:10px; }
-  .script-bloco-label { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:10px; }
-  .script-bloco-label.e1{color:var(--accent)} .script-bloco-label.e2{color:var(--accent2)} .script-bloco-label.e3{color:var(--accent3)}
-  .script-topico { display:flex; gap:10px; padding:7px 0; border-bottom:1px solid var(--border); font-size:13px; color:#ccc; line-height:1.5; }
-  .script-topico:last-child { border:none; padding-bottom:0; }
-  .script-topico::before { content:"→"; color:var(--muted); flex-shrink:0; }
-  .script-num { font-family:'DM Mono',monospace; font-size:10px; color:var(--muted2); flex-shrink:0; width:20px; }
-
-  /* REFERÊNCIAS */
-  .ref-name { font-size:17px; font-weight:600; margin-bottom:3px; }
-  .ref-handle { font-family:'DM Mono',monospace; font-size:11px; color:var(--muted); margin-bottom:12px; }
-  .insight-list { list-style:none; }
-  .insight-list li { padding:7px 0; border-bottom:1px solid var(--border); font-size:13px; color:#ccc; display:flex; gap:10px; }
-  .insight-list li:last-child { border:none; }
-  .insight-list li::before { content:"→"; color:var(--accent); flex-shrink:0; }
-
-  /* YOUTUBE VÍDEOS */
-  .yt-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:12px; }
-  .yt-card { background:var(--bg3); border:1px solid var(--border); border-radius:6px; overflow:hidden; cursor:pointer; transition:border-color .2s; }
-  .yt-card:hover { border-color:var(--accent2); }
-  .yt-thumb { width:100%; aspect-ratio:16/9; background:var(--muted2); position:relative; overflow:hidden; }
-  .yt-thumb img { width:100%; height:100%; object-fit:cover; }
-  .yt-thumb .no-thumb { width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:var(--muted2); font-size:28px; }
-  .yt-info { padding:10px; }
-  .yt-title { font-size:12px; font-weight:500; line-height:1.4; margin-bottom:5px; color:var(--text); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-  .yt-meta { font-family:'DM Mono',monospace; font-size:10px; color:var(--muted); }
-  .yt-views { font-family:'DM Mono',monospace; font-size:10px; color:var(--accent2); }
-
-  /* CALENDÁRIO */
-  .calendar-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:8px; }
-  .cal-week { background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:14px; cursor:pointer; transition:all .2s; }
-  .cal-week:hover { border-color:var(--accent); }
-  .cal-week.published { border-left:3px solid var(--green); }
-  .cal-week.planned { border-left:3px solid var(--accent); }
-  .cal-week.empty { border-left:3px solid var(--muted2); border-style:dashed; }
-  .cal-week-label { font-family:'DM Mono',monospace; font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:7px; }
-  .cal-week-title { font-size:13px; font-weight:500; line-height:1.4; color:var(--text); }
-  .cal-week-status { font-family:'DM Mono',monospace; font-size:10px; margin-top:8px; }
-  .cal-week.published .cal-week-status{color:var(--green)} .cal-week.planned .cal-week-status{color:var(--accent)} .cal-week.empty .cal-week-status{color:var(--muted2)}
-
-  /* TENDÊNCIAS */
-  .trend-item { display:flex; align-items:center; gap:14px; padding:13px 0; border-bottom:1px solid var(--border); }
-  .trend-rank { font-family:'Bebas Neue',sans-serif; font-size:26px; color:var(--muted2); width:32px; flex-shrink:0; }
-  .trend-title { font-size:13px; font-weight:500; flex:1; }
-  .trend-meta { font-family:'DM Mono',monospace; font-size:10px; color:var(--muted); }
-  .trend-arrow { color:var(--accent); font-size:16px; }
-
-  hr.div { border:none; border-top:1px solid var(--border); margin:26px 0; }
-
-  /* API SETUP */
-  .api-banner { background:#0d1000; border:1px solid #2a3a00; border-radius:8px; padding:16px 20px; margin-bottom:20px; display:flex; align-items:center; gap:14px; }
-  .api-banner .icon { font-size:20px; flex-shrink:0; }
-  .api-banner-text { flex:1; font-size:13px; color:#aaa; line-height:1.5; }
-  .api-banner-text strong { color:var(--accent); }
-
-  /* NOTIFY */
-  .toast { position:fixed; bottom:24px; right:24px; background:var(--bg3); border:1px solid var(--accent); border-radius:8px; padding:12px 20px; font-size:13px; color:var(--accent); font-family:'DM Mono',monospace; z-index:9999; opacity:0; transform:translateY(10px); transition:all .3s; pointer-events:none; }
-  .toast.show { opacity:1; transform:translateY(0); }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;}
+  header{border-bottom:1px solid var(--border);padding:18px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:100;}
+  .logo{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:var(--accent);}
+  .logo span{color:var(--muted);font-size:11px;font-family:'DM Mono',monospace;margin-left:10px;letter-spacing:0;vertical-align:middle;}
+  nav{display:flex;gap:3px;}
+  nav button{background:none;border:1px solid transparent;color:var(--muted);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;padding:7px 12px;cursor:pointer;border-radius:4px;text-transform:uppercase;transition:all .2s;}
+  nav button.active{color:var(--accent);border-color:var(--accent);background:rgba(232,255,71,.05);}
+  nav button:hover:not(.active){color:var(--text);border-color:var(--border2);background:var(--bg3);}
+  main{max-width:1120px;margin:0 auto;padding:36px 28px;}
+  .section{display:none;}.section.active{display:block;}
+  h2{font-family:'Bebas Neue',sans-serif;font-size:34px;letter-spacing:2px;margin-bottom:4px;}
+  .subtitle{color:var(--muted);font-size:12px;margin-bottom:28px;font-family:'DM Mono',monospace;}
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:22px;margin-bottom:14px;}
+  .card:hover{border-color:var(--border2);}
+  .card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;}
+  .tag{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:3px 8px;border-radius:3px;background:var(--bg3);color:var(--muted);border:1px solid var(--border);}
+  .tag.yellow{background:#1f1d00;color:var(--accent);border-color:#3a3800;}
+  .tag.green{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);}
+  .tag.orange{background:#1f0d00;color:var(--accent2);border-color:#3a1a00;}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media(max-width:720px){.grid-2{grid-template-columns:1fr;}}
+  .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px;}
+  .metric{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px 18px;}
+  .metric-value{font-family:'Bebas Neue',sans-serif;font-size:34px;line-height:1;color:var(--accent);}
+  .metric-label{font-size:11px;color:var(--muted);margin-top:4px;}
+  .blocos{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:28px;}
+  .bloco{padding:18px 20px;border-right:1px solid var(--border);}
+  .bloco:last-child{border:none;}
+  .bloco-num{font-family:'Bebas Neue',sans-serif;font-size:44px;line-height:1;margin-bottom:4px;}
+  .bloco-num.e1{color:var(--accent)}.bloco-num.e2{color:var(--accent2)}.bloco-num.e3{color:var(--accent3)}
+  .bloco-title{font-size:13px;font-weight:600;margin-bottom:6px;}
+  .bloco-desc{font-size:12px;color:var(--muted);line-height:1.6;}
+  .bloco-time{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted2);margin-top:8px;text-transform:uppercase;letter-spacing:1px;}
+  label{display:block;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:7px;margin-top:18px;}
+  label:first-child{margin-top:0;}
+  input[type="text"],input[type="password"]{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;padding:11px 14px;outline:none;transition:border-color .2s;}
+  input:focus{border-color:var(--accent);}
+  .field-wrap{position:relative;}
+  textarea{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;padding:14px;resize:vertical;outline:none;transition:border-color .2s;line-height:1.6;}
+  textarea:focus{border-color:var(--accent);}
+  textarea::placeholder{color:var(--muted2);}
+  textarea.short{min-height:80px;}textarea.tall{min-height:160px;}
+  .mic-btn{position:absolute;right:10px;bottom:10px;width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:var(--bg2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;color:var(--muted);font-size:16px;}
+  .mic-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .mic-btn.recording{background:rgba(255,60,60,.15);border-color:#ff3c3c;color:#ff3c3c;animation:pulse 1s infinite;}
+  .mic-status{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:5px;min-height:16px;}
+  .mic-status.active{color:#ff3c3c;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+  .btn{background:var(--accent);color:#000;border:none;border-radius:6px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:14px;padding:11px 22px;cursor:pointer;letter-spacing:.4px;transition:all .2s;display:inline-flex;align-items:center;gap:8px;}
+  .btn:hover{background:#d4eb2e;transform:translateY(-1px);}
+  .btn:active{transform:translateY(0);}
+  .btn:disabled{opacity:.35;cursor:not-allowed;transform:none;}
+  .btn-ghost{background:none;border:1px solid var(--border);color:var(--text);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;padding:9px 16px;cursor:pointer;transition:all .2s;}
+  .btn-ghost:hover{border-color:var(--muted);background:var(--bg3);}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px;}
+  .loading{display:none;align-items:center;gap:10px;color:var(--muted);font-size:12px;font-family:'DM Mono',monospace;margin-top:14px;}
+  .loading.visible{display:flex;}
+  .spinner{width:15px;height:15px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .output-box{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:24px;margin-top:18px;display:none;}
+  .output-box.visible{display:block;}
+  .out-section{margin-bottom:22px;}
+  .out-section h4{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--border);}
+  .out-titulo{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1px;color:var(--accent);line-height:1.2;margin-bottom:6px;}
+  .out-text{font-size:14px;color:#ccc;line-height:1.7;}
+  .alt-title{font-size:13px;color:var(--muted);padding:4px 0;border-bottom:1px solid var(--border);}
+  .script-bloco{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:18px;margin-bottom:10px;}
+  .script-bloco-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;}
+  .script-bloco-label.e1{color:var(--accent)}.script-bloco-label.e2{color:var(--accent2)}.script-bloco-label.e3{color:var(--accent3)}
+  .script-topico{display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;color:#ccc;line-height:1.5;}
+  .script-topico:last-child{border:none;padding-bottom:0;}
+  .script-topico::before{content:"→";color:var(--muted);flex-shrink:0;}
+  .script-num{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted2);flex-shrink:0;width:20px;}
+  .ref-name{font-size:17px;font-weight:600;margin-bottom:3px;}
+  .ref-handle{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);margin-bottom:12px;}
+  .insight-list{list-style:none;}
+  .insight-list li{padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;color:#ccc;display:flex;gap:10px;}
+  .insight-list li:last-child{border:none;}
+  .insight-list li::before{content:"→";color:var(--accent);flex-shrink:0;}
+  .yt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px;}
+  .yt-card{background:var(--bg3);border:1px solid var(--border);border-radius:6px;overflow:hidden;cursor:pointer;transition:border-color .2s;}
+  .yt-card:hover{border-color:var(--accent2);}
+  .yt-thumb{width:100%;aspect-ratio:16/9;background:var(--muted2);overflow:hidden;}
+  .yt-thumb img{width:100%;height:100%;object-fit:cover;}
+  .yt-thumb .no-thumb{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted2);font-size:28px;}
+  .yt-info{padding:10px;}
+  .yt-title{font-size:12px;font-weight:500;line-height:1.4;margin-bottom:5px;color:var(--text);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .yt-meta{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);}
+  .yt-views{font-family:'DM Mono',monospace;font-size:10px;color:var(--accent2);}
+  .calendar-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:8px;}
+  .cal-week{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;cursor:pointer;transition:all .2s;}
+  .cal-week:hover{border-color:var(--accent);}
+  .cal-week.published{border-left:3px solid var(--green);}
+  .cal-week.planned{border-left:3px solid var(--accent);}
+  .cal-week.empty{border-left:3px solid var(--muted2);border-style:dashed;}
+  .cal-week-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:7px;}
+  .cal-week-title{font-size:13px;font-weight:500;line-height:1.4;color:var(--text);}
+  .cal-week-status{font-family:'DM Mono',monospace;font-size:10px;margin-top:8px;}
+  .cal-week.published .cal-week-status{color:var(--green)}.cal-week.planned .cal-week-status{color:var(--accent)}.cal-week.empty .cal-week-status{color:var(--muted2)}
+  .trend-item{display:flex;align-items:center;gap:14px;padding:13px 0;border-bottom:1px solid var(--border);}
+  .trend-rank{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--muted2);width:32px;flex-shrink:0;}
+  .trend-title{font-size:13px;font-weight:500;flex:1;}
+  .trend-meta{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);}
+  .trend-arrow{color:var(--accent);font-size:16px;}
+  hr.div{border:none;border-top:1px solid var(--border);margin:26px 0;}
+  .api-banner{background:#0d1000;border:1px solid #2a3a00;border-radius:8px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;gap:14px;}
+  .api-banner-text{flex:1;font-size:13px;color:#aaa;line-height:1.5;}
+  .api-banner-text strong{color:var(--accent);}
+  .toast{position:fixed;bottom:24px;right:24px;background:var(--bg3);border:1px solid var(--accent);border-radius:8px;padding:12px 20px;font-size:13px;color:var(--accent);font-family:'DM Mono',monospace;z-index:9999;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none;}
+  .toast.show{opacity:1;transform:translateY(0);}
 </style>
 </head>
 <body>
-
 <header>
   <div class="logo">CURADORIA <span>canal empreendedor · v2.0</span></div>
   <nav>
@@ -220,135 +137,66 @@
     <button onclick="nav('config')">Config</button>
   </nav>
 </header>
-
 <main>
 
-<!-- ═══════════════ DASHBOARD ═══════════════ -->
 <div class="section active" id="dashboard">
   <h2>Dashboard</h2>
   <p class="subtitle">Semana atual · <span id="current-week"></span></p>
-
   <div class="metrics">
     <div class="metric"><div class="metric-value" id="m-pub">0</div><div class="metric-label">publicados</div></div>
     <div class="metric"><div class="metric-value" id="m-plan">0</div><div class="metric-label">pautas geradas</div></div>
     <div class="metric"><div class="metric-value">3</div><div class="metric-label">refs monitoradas</div></div>
     <div class="metric"><div class="metric-value">15–20</div><div class="metric-label">min meta/vídeo</div></div>
   </div>
-
   <div class="blocos">
-    <div class="bloco">
-      <div class="bloco-num e1">01</div>
-      <div class="bloco-title">Entretenimento / Hook</div>
-      <div class="bloco-desc">Abre com o momento mais tenso ou curioso da história. O espectador decide ficar nos primeiros 30 seg.</div>
-      <div class="bloco-time">~4–5 min</div>
-    </div>
-    <div class="bloco">
-      <div class="bloco-num e2">02</div>
-      <div class="bloco-title">História + Ensinamento</div>
-      <div class="bloco-desc">Conta a experiência em narrativa. No fim do bloco, extrai a lição concreta de empreendedorismo.</div>
-      <div class="bloco-time">~6–8 min</div>
-    </div>
-    <div class="bloco">
-      <div class="bloco-num e3">03</div>
-      <div class="bloco-title">Registro de Rotina</div>
-      <div class="bloco-desc">Bastidores reais da semana. Mostra o processo, não só o resultado. Autenticidade gera conexão.</div>
-      <div class="bloco-time">~5–7 min</div>
-    </div>
+    <div class="bloco"><div class="bloco-num e1">01</div><div class="bloco-title">Entretenimento / Hook</div><div class="bloco-desc">Abre com o momento mais tenso ou curioso da história. O espectador decide ficar nos primeiros 30 seg.</div><div class="bloco-time">~4–5 min</div></div>
+    <div class="bloco"><div class="bloco-num e2">02</div><div class="bloco-title">História + Ensinamento</div><div class="bloco-desc">Conta a experiência em narrativa. No fim do bloco, extrai a lição concreta de empreendedorismo.</div><div class="bloco-time">~6–8 min</div></div>
+    <div class="bloco"><div class="bloco-num e3">03</div><div class="bloco-title">Registro de Rotina</div><div class="bloco-desc">Bastidores reais da semana. Mostra o processo, não só o resultado. Autenticidade gera conexão.</div><div class="bloco-time">~5–7 min</div></div>
   </div>
-
   <div class="card">
     <div class="card-header">
-      <div>
-        <div style="font-weight:600;margin-bottom:4px">Próximo vídeo</div>
-        <div style="color:var(--muted);font-size:13px" id="next-title">Nenhuma pauta gerada ainda</div>
-      </div>
+      <div><div style="font-weight:600;margin-bottom:4px">Próximo vídeo</div><div style="color:var(--muted);font-size:13px" id="next-title">Nenhuma pauta gerada ainda</div></div>
       <span class="tag" id="next-status">pendente</span>
     </div>
     <button class="btn" onclick="nav('gerador')">+ Gerar pauta desta semana</button>
   </div>
 </div>
 
-<!-- ═══════════════ GERADOR ═══════════════ -->
 <div class="section" id="gerador">
   <h2>Gerar Pauta + Script</h2>
   <p class="subtitle">Fale ou escreva seus registros → receba pauta + script em tópicos para contar como história</p>
-
   <div class="card">
-    <!-- VOZ PRINCIPAL -->
     <label>Seus registros desta semana — fale ou escreva</label>
     <div class="field-wrap">
       <textarea class="tall" id="registros" placeholder="Clique no 🎤 e fale naturalmente: o que aconteceu, o que você decidiu, o que filmou, o que foi difícil, o que deu certo..."></textarea>
       <button class="mic-btn" id="mic1" onclick="toggleMic('registros','mic1','mic1-status')" title="Gravar voz">🎤</button>
     </div>
     <div class="mic-status" id="mic1-status"></div>
-
-    <!-- APRENDIZADO -->
     <label>Aprendizado ou reflexão principal da semana — fale ou escreva</label>
     <div class="field-wrap">
       <textarea class="short" id="aprendizado" placeholder="Ex: aprendi que não devo tomar decisão de produto sozinho..."></textarea>
       <button class="mic-btn" id="mic2" onclick="toggleMic('aprendizado','mic2','mic2-status')" title="Gravar voz">🎤</button>
     </div>
     <div class="mic-status" id="mic2-status"></div>
-
-    <!-- TOM -->
     <label>Tom desta semana (opcional)</label>
     <div class="field-wrap">
       <textarea class="short" id="tom" placeholder="Ex: semana pesada mas com resultado / animado com o lançamento..."></textarea>
       <button class="mic-btn" id="mic3" onclick="toggleMic('tom','mic3','mic3-status')" title="Gravar voz">🎤</button>
     </div>
     <div class="mic-status" id="mic3-status"></div>
-
     <div class="row">
       <button class="btn" id="btn-gerar" onclick="gerarPauta()">⚡ Gerar pauta + script</button>
       <button class="btn-ghost" onclick="limpar()">Limpar</button>
     </div>
   </div>
-
   <div class="loading" id="loading"><div class="spinner"></div>Gerando pauta e script com IA...</div>
-
-  <!-- OUTPUT -->
   <div class="output-box" id="output">
-
-    <div class="out-section">
-      <h4>Título principal</h4>
-      <div class="out-titulo" id="out-titulo"></div>
-      <div id="out-alts" style="margin-top:8px"></div>
-    </div>
-
-    <div class="out-section">
-      <h4>Chamada de thumbnail (3–5 palavras)</h4>
-      <div class="out-text" id="out-thumb-text"></div>
-    </div>
-
-    <div class="out-section">
-      <h4>Script — Bloco 01: Entretenimento / Hook (4–5 min)</h4>
-      <div class="script-bloco">
-        <div class="script-bloco-label e1">01 — Como abrir o vídeo</div>
-        <div id="script-b1"></div>
-      </div>
-    </div>
-
-    <div class="out-section">
-      <h4>Script — Bloco 02: História + Ensinamento (6–8 min)</h4>
-      <div class="script-bloco">
-        <div class="script-bloco-label e2">02 — Narrativa e lição</div>
-        <div id="script-b2"></div>
-      </div>
-    </div>
-
-    <div class="out-section">
-      <h4>Script — Bloco 03: Registro de Rotina (5–7 min)</h4>
-      <div class="script-bloco">
-        <div class="script-bloco-label e3">03 — Bastidores reais</div>
-        <div id="script-b3"></div>
-      </div>
-    </div>
-
-    <div class="out-section">
-      <h4>Sugestão visual de thumbnail</h4>
-      <div class="out-text" id="out-thumb-visual"></div>
-    </div>
-
+    <div class="out-section"><h4>Título principal</h4><div class="out-titulo" id="out-titulo"></div><div id="out-alts" style="margin-top:8px"></div></div>
+    <div class="out-section"><h4>Chamada de thumbnail (3–5 palavras)</h4><div class="out-text" id="out-thumb-text"></div></div>
+    <div class="out-section"><h4>Script — Bloco 01: Entretenimento / Hook (4–5 min)</h4><div class="script-bloco"><div class="script-bloco-label e1">01 — Como abrir o vídeo</div><div id="script-b1"></div></div></div>
+    <div class="out-section"><h4>Script — Bloco 02: História + Ensinamento (6–8 min)</h4><div class="script-bloco"><div class="script-bloco-label e2">02 — Narrativa e lição</div><div id="script-b2"></div></div></div>
+    <div class="out-section"><h4>Script — Bloco 03: Registro de Rotina (5–7 min)</h4><div class="script-bloco"><div class="script-bloco-label e3">03 — Bastidores reais</div><div id="script-b3"></div></div></div>
+    <div class="out-section"><h4>Sugestão visual de thumbnail</h4><div class="out-text" id="out-thumb-visual"></div></div>
     <div class="row">
       <button class="btn" onclick="salvarPauta()">💾 Salvar no calendário</button>
       <button class="btn-ghost" onclick="gerarPauta()">↻ Gerar novamente</button>
@@ -356,111 +204,44 @@
   </div>
 </div>
 
-<!-- ═══════════════ REFERÊNCIAS ═══════════════ -->
 <div class="section" id="referencias">
   <h2>Referências</h2>
   <p class="subtitle">Canais monitorados · vídeos recentes + mais engajados</p>
-
   <div id="api-banner-ref" class="api-banner" style="display:none">
-    <div class="icon">🔑</div>
-    <div class="api-banner-text">
-      <strong>YouTube API não configurada.</strong> Configure sua chave em <strong>Config</strong> para carregar os vídeos reais de cada canal com dados de engajamento.
-    </div>
+    <div class="api-banner-text"><strong>YouTube API não configurada.</strong> Configure sua chave em <strong>Config</strong> para carregar os vídeos reais de cada canal.</div>
     <button class="btn-ghost" onclick="nav('config')" style="flex-shrink:0;font-size:12px;padding:7px 12px">Configurar</button>
   </div>
-
-  <!-- Canal 1 -->
   <div class="card">
-    <div class="card-header">
-      <div>
-        <div class="ref-name">Daniel Dalen</div>
-        <div class="ref-handle">@danieldalen · 190K+ inscritos · Internacional</div>
-      </div>
-      <span class="tag yellow">🔥 referência principal</span>
-    </div>
-    <ul class="insight-list">
-      <li>Formato "POV:" nos títulos — cria série reconhecível, reduz esforço criativo</li>
-      <li>Thumbnail consistente: texto branco em negrito + ele na frente. Identidade visual forte</li>
-      <li>1 vídeo/semana todo domingo — criou rotina na audiência, esperam o episódio</li>
-      <li>Vlogs contando histórias reais de decisões de founder: equipe, produto, liderança</li>
-      <li>Aspiracional sem ostentação — foco nas lições, não nos carros e viagens</li>
-    </ul>
-    <div class="yt-grid" id="yt-danieldalen">
-      <div style="grid-column:1/-1;color:var(--muted);font-size:12px;font-family:'DM Mono',monospace;padding:8px 0">
-        Configure a YouTube API para ver os vídeos mais engajados →
-        <button class="btn-ghost" onclick="nav('config')" style="font-size:11px;padding:5px 10px;margin-left:8px">Configurar</button>
-      </div>
-    </div>
+    <div class="card-header"><div><div class="ref-name">Daniel Dalen</div><div class="ref-handle">@danieldalen · 190K+ inscritos · Internacional</div></div><span class="tag yellow">🔥 referência principal</span></div>
+    <ul class="insight-list"><li>Formato "POV:" nos títulos — cria série reconhecível, reduz esforço criativo</li><li>Thumbnail consistente: texto branco em negrito + ele na frente. Identidade visual forte</li><li>1 vídeo/semana todo domingo — criou rotina na audiência, esperam o episódio</li><li>Vlogs contando histórias reais de decisões de founder: equipe, produto, liderança</li><li>Aspiracional sem ostentação — foco nas lições, não nos carros e viagens</li></ul>
+    <div class="yt-grid" id="yt-danieldalen"><div style="grid-column:1/-1;color:var(--muted);font-size:12px;font-family:'DM Mono',monospace;padding:8px 0">Configure a YouTube API para ver os vídeos mais engajados → <button class="btn-ghost" onclick="nav('config')" style="font-size:11px;padding:5px 10px;margin-left:8px">Configurar</button></div></div>
   </div>
-
-  <!-- Canal 2 -->
   <div class="card">
-    <div class="card-header">
-      <div>
-        <div class="ref-name">Daniel Lima</div>
-        <div class="ref-handle">@daniellimae · AbacatePay · Nacional (BR)</div>
-      </div>
-      <span class="tag green">build in public</span>
-    </div>
-    <ul class="insight-list">
-      <li>Posicionamento direto: "Construa em Público e documente sua jornada"</li>
-      <li>Compartilha pivots, vitórias pequenas, experimentos — não só os sucessos</li>
-      <li>Update de produto vira episódio — o negócio alimenta o canal continuamente</li>
-      <li>Comunidade de founders como audiência principal — nicho específico, alta qualidade</li>
-    </ul>
-    <div class="yt-grid" id="yt-daniellima">
-      <div style="grid-column:1/-1;color:var(--muted);font-size:12px;font-family:'DM Mono',monospace;padding:8px 0">
-        Configure a YouTube API para ver os vídeos mais engajados →
-        <button class="btn-ghost" onclick="nav('config')" style="font-size:11px;padding:5px 10px;margin-left:8px">Configurar</button>
-      </div>
-    </div>
+    <div class="card-header"><div><div class="ref-name">Daniel Lima</div><div class="ref-handle">@daniellimae · AbacatePay · Nacional (BR)</div></div><span class="tag green">build in public</span></div>
+    <ul class="insight-list"><li>Posicionamento direto: "Construa em Público e documente sua jornada"</li><li>Compartilha pivots, vitórias pequenas, experimentos — não só os sucessos</li><li>Update de produto vira episódio — o negócio alimenta o canal continuamente</li><li>Comunidade de founders como audiência principal — nicho específico, alta qualidade</li></ul>
+    <div class="yt-grid" id="yt-daniellima"><div style="grid-column:1/-1;color:var(--muted);font-size:12px;font-family:'DM Mono',monospace;padding:8px 0">Configure a YouTube API para ver os vídeos mais engajados → <button class="btn-ghost" onclick="nav('config')" style="font-size:11px;padding:5px 10px;margin-left:8px">Configurar</button></div></div>
   </div>
-
-  <!-- Canal 3 -->
   <div class="card">
-    <div class="card-header">
-      <div>
-        <div class="ref-name">Marc Lou</div>
-        <div class="ref-handle">@marclou · Internacional · SaaS indie hacker</div>
-      </div>
-      <span class="tag orange">sugerido</span>
-    </div>
-    <ul class="insight-list">
-      <li>Numera os episódios por dias: "Day 512" — cria narrativa de jornada contínua</li>
-      <li>Produto + canal integrados — o conteúdo é parte da estratégia de distribuição</li>
-      <li>Produção simples, valor no conteúdo — câmera básica, zero artificialismo</li>
-    </ul>
-    <div class="yt-grid" id="yt-marclou">
-      <div style="grid-column:1/-1;color:var(--muted);font-size:12px;font-family:'DM Mono',monospace;padding:8px 0">
-        Configure a YouTube API para ver os vídeos mais engajados →
-        <button class="btn-ghost" onclick="nav('config')" style="font-size:11px;padding:5px 10px;margin-left:8px">Configurar</button>
-      </div>
-    </div>
+    <div class="card-header"><div><div class="ref-name">Marc Lou</div><div class="ref-handle">@marclou · Internacional · SaaS indie hacker</div></div><span class="tag orange">sugerido</span></div>
+    <ul class="insight-list"><li>Numera os episódios por dias: "Day 512" — cria narrativa de jornada contínua</li><li>Produto + canal integrados — o conteúdo é parte da estratégia de distribuição</li><li>Produção simples, valor no conteúdo — câmera básica, zero artificialismo</li></ul>
+    <div class="yt-grid" id="yt-marclou"><div style="grid-column:1/-1;color:var(--muted);font-size:12px;font-family:'DM Mono',monospace;padding:8px 0">Configure a YouTube API para ver os vídeos mais engajados → <button class="btn-ghost" onclick="nav('config')" style="font-size:11px;padding:5px 10px;margin-left:8px">Configurar</button></div></div>
   </div>
-
   <hr class="div">
   <h2 style="font-size:20px;margin-bottom:16px">Adicionar canal</h2>
-  <label>Nome</label>
-  <input type="text" id="nc-nome" placeholder="Ex: Greg Isenberg">
-  <label>Handle (@) ou link do canal</label>
-  <input type="text" id="nc-handle" placeholder="Ex: @gregisenberg">
-  <label>Por que é referência</label>
-  <textarea class="short" id="nc-notas" placeholder="Ex: documenta crescimento com produto digital, formato curto..."></textarea>
+  <label>Nome</label><input type="text" id="nc-nome" placeholder="Ex: Greg Isenberg">
+  <label>Handle (@) ou link do canal</label><input type="text" id="nc-handle" placeholder="Ex: @gregisenberg">
+  <label>Por que é referência</label><textarea class="short" id="nc-notas" placeholder="Ex: documenta crescimento com produto digital..."></textarea>
   <div class="row"><button class="btn" onclick="addCanal()">+ Adicionar</button></div>
   <div id="canais-extra" style="margin-top:12px"></div>
 </div>
 
-<!-- ═══════════════ CALENDÁRIO ═══════════════ -->
 <div class="section" id="calendario">
   <h2>Calendário Editorial</h2>
   <p class="subtitle">1 vídeo por semana</p>
   <div class="calendar-grid" id="cal-grid"></div>
-  <div class="row" style="margin-top:20px">
-    <button class="btn-ghost" onclick="nav('gerador')">+ Gerar pauta para nova semana</button>
-  </div>
+  <div class="row" style="margin-top:20px"><button class="btn-ghost" onclick="nav('gerador')">+ Gerar pauta para nova semana</button></div>
 </div>
 
-<!-- ═══════════════ TENDÊNCIAS ═══════════════ -->
 <div class="section" id="tendencias">
   <h2>Tendências</h2>
   <p class="subtitle">Padrões de título, formato e thumbnail em alta no nicho de jornada empreendedora</p>
@@ -468,63 +249,38 @@
     <div class="card">
       <div style="font-weight:600;margin-bottom:14px;font-size:14px">📌 Fórmulas de título que performam</div>
       <div class="trend-item"><div class="trend-rank">01</div><div><div class="trend-title">POV: você está [situação real de founder]</div><div class="trend-meta">Daniel Dalen · imersivo · alta identificação</div></div><div class="trend-arrow">↑</div></div>
-      <div class="trend-item"><div class="trend-rank">02</div><div><div class="trend-title">[X dias/semanas] construindo [produto] — o que aprendi</div><div class="trend-meta">Marc Lou · narrativa contínua · cria série</div></div><div class="trend-arrow">↑</div></div>
+      <div class="trend-item"><div class="trend-rank">02</div><div><div class="trend-title">[X dias] construindo [produto] — o que aprendi</div><div class="trend-meta">Marc Lou · narrativa contínua · cria série</div></div><div class="trend-arrow">↑</div></div>
       <div class="trend-item"><div class="trend-rank">03</div><div><div class="trend-title">Errei feio em [área] — e foi o melhor que aconteceu</div><div class="trend-meta">Vulnerabilidade · alta retenção · comentários</div></div><div class="trend-arrow">↑</div></div>
       <div class="trend-item"><div class="trend-rank">04</div><div><div class="trend-title">A verdade sobre [tema difícil de empreender]</div><div class="trend-meta">Contra-narrativa · funciona com honestidade real</div></div><div class="trend-arrow">→</div></div>
       <div class="trend-item"><div class="trend-rank">05</div><div><div class="trend-title">Semana [N]: [momento específico do negócio]</div><div class="trend-meta">Formato de série · cria hábito de consumo</div></div><div class="trend-arrow">↑</div></div>
     </div>
     <div class="card">
       <div style="font-weight:600;margin-bottom:14px;font-size:14px">🎨 Thumbnail — o que converte</div>
-      <ul class="insight-list">
-        <li>Texto grande branco/amarelo · máximo 5 palavras · legível em miniatura</li>
-        <li>Close no rosto com expressão genuína — não forçada, não exagerada</li>
-        <li>Contraste alto entre fundo e texto</li>
-        <li>Consistência visual entre episódios — identidade de série</li>
-        <li>Uma cor de destaque única e repetida em todos os vídeos</li>
-        <li>Evitar: muito texto, emojis excessivos, clickbait desconexo do conteúdo</li>
-      </ul>
+      <ul class="insight-list"><li>Texto grande branco/amarelo · máximo 5 palavras · legível em miniatura</li><li>Close no rosto com expressão genuína — não forçada</li><li>Contraste alto entre fundo e texto</li><li>Consistência visual entre episódios — identidade de série</li><li>Uma cor de destaque única e repetida em todos os vídeos</li></ul>
       <div style="margin-top:18px;font-weight:600;margin-bottom:10px;font-size:14px">📈 Formatos em alta (2025)</div>
-      <ul class="insight-list">
-        <li>Building in public com números reais (receita, usuários, churn)</li>
-        <li>Vlog processo "câmera na mão" — baixa produção, alto valor</li>
-        <li>Retrospectivas semanais com métricas honestas</li>
-        <li>Decisões difíceis gravadas em tempo real, pouco editadas</li>
-      </ul>
+      <ul class="insight-list"><li>Building in public com números reais (receita, usuários, churn)</li><li>Vlog processo "câmera na mão" — baixa produção, alto valor</li><li>Retrospectivas semanais com métricas honestas</li><li>Decisões difíceis gravadas em tempo real, pouco editadas</li></ul>
     </div>
   </div>
   <div class="card" style="margin-top:14px">
     <div style="font-weight:600;margin-bottom:10px">💡 Aplicado ao seu canal</div>
-    <ul class="insight-list">
-      <li>Série: "POV: construindo um SaaS do zero — semana X" ou "Semana X: [momento real]"</li>
-      <li>Thumbnail: fundo escuro + texto branco "SEMANA X" + expressão genuína sua</li>
-      <li>Pin do ep. 1 e uma playlist de série na página do canal</li>
-      <li>Primeiros 30 seg: comece no meio da ação mais tensa — explique o contexto depois</li>
-    </ul>
+    <ul class="insight-list"><li>Série: "POV: construindo um SaaS do zero — semana X" ou "Semana X: [momento real]"</li><li>Thumbnail: fundo escuro + texto branco "SEMANA X" + expressão genuína sua</li><li>Pin do ep. 1 e uma playlist de série na página do canal</li><li>Primeiros 30 seg: comece no meio da ação mais tensa — explique o contexto depois</li></ul>
   </div>
 </div>
 
-<!-- ═══════════════ CONFIG ═══════════════ -->
 <div class="section" id="config">
   <h2>Configurações</h2>
   <p class="subtitle">YouTube Data API · preferências do canal</p>
-
   <div class="card">
     <div style="font-weight:600;font-size:15px;margin-bottom:6px">🔑 YouTube Data API v3</div>
-    <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:16px">
-      Com a chave configurada, o sistema busca os vídeos mais recentes e os de maior engajamento dos canais de referência, e usa esses dados para guiar a geração das suas pautas.
-    </div>
-
     <div style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:16px;margin-bottom:16px;font-size:13px;color:#aaa;line-height:1.8">
       <strong style="color:var(--text)">Como criar sua chave gratuita:</strong><br>
       1. Acesse <strong style="color:var(--accent)">console.cloud.google.com</strong><br>
       2. Crie um projeto (ou selecione um existente)<br>
-      3. Vá em <strong>APIs &amp; Services → Library</strong><br>
-      4. Pesquise <strong>"YouTube Data API v3"</strong> e ative<br>
-      5. Vá em <strong>Credentials → Create Credentials → API Key</strong><br>
-      6. Copie e cole abaixo ↓
+      3. APIs &amp; Services → Library → pesquise "YouTube Data API v3" → Ativar<br>
+      4. Credentials → Create Credentials → API Key<br>
+      5. Cole abaixo ↓
     </div>
-
-    <label>Sua chave de API</label>
+    <label>Sua chave de API do YouTube</label>
     <input type="password" id="yt-api-key" placeholder="AIza..." autocomplete="off">
     <div class="row">
       <button class="btn" onclick="salvarApiKey()">Salvar chave</button>
@@ -532,29 +288,14 @@
       <span id="api-status" style="font-family:'DM Mono',monospace;font-size:12px;color:var(--muted)"></span>
     </div>
   </div>
-
   <div class="card">
     <div style="font-weight:600;font-size:15px;margin-bottom:14px">📺 IDs dos canais de referência</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:12px;font-family:'DM Mono',monospace">
-      Para encontrar o ID de um canal: abra o canal no YouTube → clique em "Sobre" → "Compartilhar canal" → "Copiar ID do canal"
-    </div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px;font-family:'DM Mono',monospace">Canal YouTube → Sobre → Compartilhar canal → Copiar ID do canal</div>
     <div class="grid-2">
-      <div>
-        <label>Daniel Dalen — Channel ID</label>
-        <input type="text" id="id-danieldalen" placeholder="UCxxxxxx...">
-      </div>
-      <div>
-        <label>Daniel Lima — Channel ID</label>
-        <input type="text" id="id-daniellima" placeholder="UCxxxxxx...">
-      </div>
-      <div>
-        <label>Marc Lou — Channel ID</label>
-        <input type="text" id="id-marclou" placeholder="UCxxxxxx...">
-      </div>
-      <div>
-        <label>Canal extra 1 — Channel ID</label>
-        <input type="text" id="id-extra1" placeholder="UCxxxxxx...">
-      </div>
+      <div><label>Daniel Dalen</label><input type="text" id="id-danieldalen" placeholder="UCxxxxxx..."></div>
+      <div><label>Daniel Lima</label><input type="text" id="id-daniellima" placeholder="UCxxxxxx..."></div>
+      <div><label>Marc Lou</label><input type="text" id="id-marclou" placeholder="UCxxxxxx..."></div>
+      <div><label>Canal extra</label><input type="text" id="id-extra1" placeholder="UCxxxxxx..."></div>
     </div>
     <div class="row">
       <button class="btn" onclick="salvarChannelIds()">Salvar IDs</button>
@@ -564,25 +305,22 @@
 </div>
 
 </main>
-
 <div class="toast" id="toast"></div>
 
 <script>
-// ═══════ STATE ═══════
 const S = {
-  get pautas()   { return JSON.parse(localStorage.getItem('pautas')||'[]') },
-  set pautas(v)  { localStorage.setItem('pautas', JSON.stringify(v)) },
-  get canais()   { return JSON.parse(localStorage.getItem('canaisExtra')||'[]') },
-  set canais(v)  { localStorage.setItem('canaisExtra', JSON.stringify(v)) },
-  get apiKey()   { return localStorage.getItem('yt_api_key')||'' },
-  set apiKey(v)  { localStorage.setItem('yt_api_key', v) },
+  get pautas()    { return JSON.parse(localStorage.getItem('pautas')||'[]') },
+  set pautas(v)   { localStorage.setItem('pautas', JSON.stringify(v)) },
+  get canais()    { return JSON.parse(localStorage.getItem('canaisExtra')||'[]') },
+  set canais(v)   { localStorage.setItem('canaisExtra', JSON.stringify(v)) },
+  get apiKey()    { return localStorage.getItem('yt_api_key')||'' },
+  set apiKey(v)   { localStorage.setItem('yt_api_key', v) },
   get channelIds(){ return JSON.parse(localStorage.getItem('channelIds')||'{}') },
   set channelIds(v){ localStorage.setItem('channelIds', JSON.stringify(v)) },
-  get ytCache()  { return JSON.parse(localStorage.getItem('ytCache')||'{}') },
-  set ytCache(v) { localStorage.setItem('ytCache', JSON.stringify(v)) }
+  get ytCache()   { return JSON.parse(localStorage.getItem('ytCache')||'{}') },
+  set ytCache(v)  { localStorage.setItem('ytCache', JSON.stringify(v)) }
 };
 
-// ═══════ NAV ═══════
 function nav(id) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
@@ -595,9 +333,8 @@ function nav(id) {
   if (id==='config') loadConfigFields();
 }
 
-// ═══════ DATE ═══════
 function weekLabel(offset=0) {
-  const now = new Date('2026-05-19'); // data atual
+  const now = new Date();
   now.setDate(now.getDate() + offset*7);
   const s = new Date(now); s.setDate(now.getDate()-now.getDay()+1);
   const e = new Date(s);   e.setDate(s.getDate()+6);
@@ -606,14 +343,12 @@ function weekLabel(offset=0) {
 }
 document.getElementById('current-week').textContent = weekLabel(0);
 
-// ═══════ TOAST ═══════
 function toast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'), 2500);
 }
 
-// ═══════ DASHBOARD ═══════
 function updateDashboard() {
   const p = S.pautas;
   document.getElementById('m-pub').textContent  = p.filter(x=>x.status==='publicado').length;
@@ -626,37 +361,20 @@ function updateDashboard() {
   }
 }
 
-// ═══════ MIC / VOICE ═══════
-let recognition = null;
-let activeRec = null;
-
+let recognition = null, activeRec = null;
 function toggleMic(fieldId, btnId, statusId) {
-  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRec) { toast('❌ Seu navegador não suporta gravação de voz. Use Chrome.'); return; }
-
-  const btn    = document.getElementById(btnId);
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { toast('Use Chrome para gravação de voz'); return; }
+  const btn = document.getElementById(btnId);
   const status = document.getElementById(statusId);
-
-  if (activeRec === fieldId) {
-    // parar
-    if (recognition) recognition.stop();
-    return;
-  }
-
-  // parar outro ativo
+  if (activeRec === fieldId) { if (recognition) recognition.stop(); return; }
   if (recognition) recognition.stop();
-
-  recognition = new SpeechRec();
-  recognition.lang = 'pt-BR';
-  recognition.continuous = true;
-  recognition.interimResults = true;
-
+  recognition = new SR();
+  recognition.lang = 'pt-BR'; recognition.continuous = true; recognition.interimResults = true;
   activeRec = fieldId;
   btn.classList.add('recording');
   status.textContent = '● Gravando... fale agora'; status.classList.add('active');
-
   let final = document.getElementById(fieldId).value;
-
   recognition.onresult = (e) => {
     let interim = '';
     for (let i = e.resultIndex; i < e.results.length; i++) {
@@ -665,89 +383,76 @@ function toggleMic(fieldId, btnId, statusId) {
     }
     document.getElementById(fieldId).value = final + interim;
   };
-
-  recognition.onerror = () => stopMic(btn, status);
-  recognition.onend   = () => stopMic(btn, status);
-
+  const stop = () => { btn.classList.remove('recording'); status.textContent = '✓ Gravação concluída'; status.classList.remove('active'); activeRec = null; recognition = null; };
+  recognition.onerror = stop; recognition.onend = stop;
   recognition.start();
 }
 
-function stopMic(btn, status) {
-  btn.classList.remove('recording');
-  status.textContent = '✓ Gravação concluída'; status.classList.remove('active');
-  activeRec = null; recognition = null;
-}
-
-// ═══════ GERADOR ═══════
 let _pauta = null;
 
 async function gerarPauta() {
   const registros   = document.getElementById('registros').value.trim();
   const aprendizado = document.getElementById('aprendizado').value.trim();
   const tom         = document.getElementById('tom').value.trim();
-
   if (!registros) { toast('Preencha os registros da semana primeiro.'); return; }
 
   document.getElementById('btn-gerar').disabled = true;
   document.getElementById('loading').classList.add('visible');
   document.getElementById('output').classList.remove('visible');
 
-  // Pegar resumo de vídeos engajados das refs para guiar a IA
   const ytContext = buildYtContext();
-
   const prompt = `Você é especialista em criação de conteúdo para YouTube no estilo "building in public" / vlog de empreendedor, formato narrativo (contar história).
 
 REFERÊNCIAS DO CRIADOR (o que está funcionando para eles):
 ${ytContext}
 
 O vídeo deve ter 15-20 minutos com TRÊS BLOCOS narrativos:
-- BLOCO 1 (4-5 min): Hook / Entretenimento — abre no momento mais tenso/curioso da história
-- BLOCO 2 (6-8 min): História + Ensinamento — conta a experiência como narrativa, extrai lição no final
+- BLOCO 1 (4-5 min): Hook — abre no momento mais tenso/curioso da história
+- BLOCO 2 (6-8 min): História + Ensinamento — narrativa completa, lição no final
 - BLOCO 3 (5-7 min): Registro de Rotina — bastidores reais da semana, processo, autenticidade
 
-CADA BLOCO deve ter um SCRIPT em tópicos (bullet points) para o criador contar como história falada, não um texto para ler.
+Cada bloco = script em tópicos para contar FALADO como história.
 
-REGISTROS DA SEMANA:
-${registros}
+REGISTROS DA SEMANA: ${registros}
+APRENDIZADO: ${aprendizado || 'Deduzir dos registros'}
+TOM: ${tom || 'Autêntico, direto'}
 
-APRENDIZADO:
-${aprendizado || 'Deduzir dos registros'}
-
-TOM:
-${tom || 'Autêntico, direto'}
-
-Responda APENAS JSON válido, sem nenhum texto fora, sem markdown:
-{
-  "titulo": "título principal estilo POV ou série",
-  "titulos_alt": ["alt 1", "alt 2"],
-  "thumbnail_texto": "3-5 palavras para thumbnail",
-  "thumbnail_visual": "descrição da thumbnail ideal",
-  "bloco1": ["tópico 1", "tópico 2", "tópico 3", "tópico 4"],
-  "bloco2": ["tópico 1", "tópico 2", "tópico 3", "tópico 4", "tópico 5", "lição final em 1 frase"],
-  "bloco3": ["tópico 1", "tópico 2", "tópico 3", "tópico 4"]
-}`;
+IMPORTANTE: Responda SOMENTE com JSON puro. Sem texto antes, sem texto depois, sem blocos de código, sem markdown. Apenas o objeto JSON:
+{"titulo":"titulo aqui","titulos_alt":["alt1","alt2"],"thumbnail_texto":"texto thumb","thumbnail_visual":"descricao visual","bloco1":["topico1","topico2","topico3","topico4"],"bloco2":["topico1","topico2","topico3","topico4","topico5","licao final"],"bloco3":["topico1","topico2","topico3","topico4"]}`;
 
   try {
-  const res = await fetch('/api/chat', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 1200,
-    messages: [{ role: 'user', content: prompt }]
-  })
-});
-const data = await res.json();
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1200,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
 
-// debug temporário — remove depois
-console.log('RAW RESPONSE:', JSON.stringify(data));
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`HTTP ${res.status}: ${errText}`);
+    }
 
-const text = (data.content || []).map(i => i.text || '').join('');
-const clean = text.replace(/```json|```/g, '').trim();
-const parsed = JSON.parse(clean);
+    const data = await res.json();
+    console.log('RAW RESPONSE:', JSON.stringify(data));
+
+    if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+
+    const text = (data.content || []).map(i => i.text || '').join('').trim();
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('JSON não encontrado na resposta: ' + text.substring(0, 200));
+    const parsed = JSON.parse(jsonMatch[0]);
+
+    document.getElementById('out-titulo').textContent        = parsed.titulo || '';
+    document.getElementById('out-thumb-text').textContent    = parsed.thumbnail_texto || '';
+    document.getElementById('out-thumb-visual').textContent  = parsed.thumbnail_visual || '';
+
     const alts = document.getElementById('out-alts');
     alts.innerHTML = '';
-    (parsed.titulos_alt||[]).forEach(t => {
+    (parsed.titulos_alt || []).forEach(t => {
       const d = document.createElement('div');
       d.className = 'alt-title'; d.textContent = '• ' + t;
       alts.appendChild(d);
@@ -758,10 +463,11 @@ const parsed = JSON.parse(clean);
     renderScript('script-b3', parsed.bloco3);
 
     document.getElementById('output').classList.add('visible');
-    _pauta = { titulo:parsed.titulo, bloco1:parsed.bloco1, bloco2:parsed.bloco2, bloco3:parsed.bloco3, semana:weekLabel(0), status:'planejado', data:new Date().toISOString() };
+    _pauta = { titulo: parsed.titulo, bloco1: parsed.bloco1, bloco2: parsed.bloco2, bloco3: parsed.bloco3, semana: weekLabel(0), status: 'planejado', data: new Date().toISOString() };
 
   } catch(err) {
-    toast('Erro ao gerar. Verifique conexão: ' + err.message);
+    console.error('ERRO COMPLETO:', err);
+    toast('Erro ao gerar: ' + err.message);
   } finally {
     document.getElementById('btn-gerar').disabled = false;
     document.getElementById('loading').classList.remove('visible');
@@ -771,7 +477,7 @@ const parsed = JSON.parse(clean);
 function renderScript(containerId, topicos) {
   const el = document.getElementById(containerId);
   el.innerHTML = '';
-  (topicos||[]).forEach((t, i) => {
+  (topicos || []).forEach((t, i) => {
     const div = document.createElement('div');
     div.className = 'script-topico';
     div.innerHTML = `<span class="script-num">${String(i+1).padStart(2,'0')}</span><span>${t}</span>`;
@@ -781,13 +487,11 @@ function renderScript(containerId, topicos) {
 
 function buildYtContext() {
   const cache = S.ytCache;
-  if (!Object.keys(cache).length) return 'Nenhum dado de referência carregado ainda. Use os padrões conhecidos: POV: títulos, formato narrativo, consistência semanal.';
+  if (!Object.keys(cache).length) return 'Padrões conhecidos: POV: títulos, formato narrativo, consistência semanal.';
   let ctx = '';
   for (const [ch, videos] of Object.entries(cache)) {
     ctx += `\n${ch}:\n`;
-    (videos||[]).slice(0,3).forEach(v => {
-      ctx += `  - "${v.title}" (${v.views} views, ${v.likes} likes)\n`;
-    });
+    (videos || []).slice(0,3).forEach(v => { ctx += `  - "${v.title}" (${v.views} views)\n`; });
   }
   return ctx;
 }
@@ -804,65 +508,42 @@ function salvarPauta() {
   nav('calendario');
 }
 
-// ═══════ YOUTUBE API ═══════
 async function fetchAllChannels() {
   const key = S.apiKey;
   if (!key) { toast('Configure a YouTube API Key primeiro.'); nav('config'); return; }
-
   const ids = S.channelIds;
   if (!Object.values(ids).some(Boolean)) { toast('Configure pelo menos um Channel ID primeiro.'); nav('config'); return; }
-
   document.getElementById('btn-fetch-yt').textContent = 'Buscando...';
   document.getElementById('btn-fetch-yt').disabled = true;
-
   const channels = [
     { name:'Daniel Dalen', id: ids.danieldalen },
     { name:'Daniel Lima',  id: ids.daniellima  },
     { name:'Marc Lou',     id: ids.marclou      },
     { name:'Extra 1',      id: ids.extra1       },
   ].filter(c => c.id);
-
   const cache = {};
   for (const ch of channels) {
     try {
-      // buscar uploads playlist
       const chanRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${ch.id}&key=${key}`);
       const chanData = await chanRes.json();
       const uploadPid = chanData.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
       if (!uploadPid) continue;
-
-      // buscar últimos 15 vídeos
       const plRes = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=15&playlistId=${uploadPid}&key=${key}`);
       const plData = await plRes.json();
       const vids = plData.items || [];
-
-      // buscar stats
       const vids_ids = vids.map(v => v.snippet.resourceId.videoId).join(',');
       const statsRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${vids_ids}&key=${key}`);
       const statsData = await statsRes.json();
       const statsMap = {};
       (statsData.items||[]).forEach(s => statsMap[s.id] = s.statistics);
-
       const enriched = vids.map(v => {
         const vid = v.snippet.resourceId.videoId;
         const stats = statsMap[vid] || {};
-        return {
-          id: vid,
-          title: v.snippet.title,
-          thumb: v.snippet.thumbnails?.medium?.url || '',
-          published: v.snippet.publishedAt,
-          views: parseInt(stats.viewCount||0),
-          likes: parseInt(stats.likeCount||0),
-          comments: parseInt(stats.commentCount||0),
-        };
-      }).sort((a,b) => b.views - a.views); // ordenar por views
-
+        return { id:vid, title:v.snippet.title, thumb:v.snippet.thumbnails?.medium?.url||'', published:v.snippet.publishedAt, views:parseInt(stats.viewCount||0), likes:parseInt(stats.likeCount||0) };
+      }).sort((a,b) => b.views - a.views);
       cache[ch.name] = enriched;
-    } catch(e) {
-      console.error('Erro canal', ch.name, e);
-    }
+    } catch(e) { console.error('Erro canal', ch.name, e); }
   }
-
   S.ytCache = cache;
   toast('✓ Dados dos canais atualizados!');
   document.getElementById('btn-fetch-yt').textContent = '↻ Buscar vídeos agora';
@@ -872,49 +553,32 @@ async function fetchAllChannels() {
 
 function renderYtVideos() {
   const cache = S.ytCache;
-  const mapping = {
-    'Daniel Dalen': 'yt-danieldalen',
-    'Daniel Lima':  'yt-daniellima',
-    'Marc Lou':     'yt-marclou',
-  };
-
+  const mapping = { 'Daniel Dalen':'yt-danieldalen', 'Daniel Lima':'yt-daniellima', 'Marc Lou':'yt-marclou' };
   for (const [name, elId] of Object.entries(mapping)) {
     const el = document.getElementById(elId);
     if (!el) continue;
     const videos = cache[name];
     if (!videos?.length) continue;
-
     el.innerHTML = '';
     videos.slice(0,6).forEach(v => {
       const card = document.createElement('div');
       card.className = 'yt-card';
       card.onclick = () => window.open(`https://youtube.com/watch?v=${v.id}`,'_blank');
-      const fmtNum = n => n>=1000000 ? (n/1000000).toFixed(1)+'M' : n>=1000 ? (n/1000).toFixed(1)+'K' : n;
-      card.innerHTML = `
-        <div class="yt-thumb">
-          ${v.thumb ? `<img src="${v.thumb}" loading="lazy">` : '<div class="no-thumb">▶</div>'}
-        </div>
-        <div class="yt-info">
-          <div class="yt-title">${v.title}</div>
-          <div class="yt-views">${fmtNum(v.views)} views</div>
-          <div class="yt-meta">${fmtNum(v.likes)} likes · ${new Date(v.published).toLocaleDateString('pt-BR')}</div>
-        </div>
-      `;
+      const fmtNum = n => n>=1000000?(n/1000000).toFixed(1)+'M':n>=1000?(n/1000).toFixed(1)+'K':n;
+      card.innerHTML = `<div class="yt-thumb">${v.thumb?`<img src="${v.thumb}" loading="lazy">`:'<div class="no-thumb">▶</div>'}</div><div class="yt-info"><div class="yt-title">${v.title}</div><div class="yt-views">${fmtNum(v.views)} views</div><div class="yt-meta">${fmtNum(v.likes)} likes · ${new Date(v.published).toLocaleDateString('pt-BR')}</div></div>`;
       el.appendChild(card);
     });
   }
 }
 
-// ═══════ REFERÊNCIAS INIT ═══════
 function initReferencias() {
-  const hasApi = !!S.apiKey;
-  document.getElementById('api-banner-ref').style.display = hasApi ? 'none' : 'flex';
+  document.getElementById('api-banner-ref').style.display = S.apiKey ? 'none' : 'flex';
   renderYtVideos();
   renderCanaisExtra();
 }
 
 function addCanal() {
-  const nome  = document.getElementById('nc-nome').value.trim();
+  const nome   = document.getElementById('nc-nome').value.trim();
   const handle = document.getElementById('nc-handle').value.trim();
   const notas  = document.getElementById('nc-notas').value.trim();
   if (!nome) return;
@@ -932,22 +596,13 @@ function renderCanaisExtra() {
   S.canais.forEach((ch,i) => {
     const d = document.createElement('div');
     d.className = 'card'; d.style.marginTop='10px';
-    d.innerHTML = `
-      <div class="card-header">
-        <div><div class="ref-name">${ch.nome}</div><div class="ref-handle">${ch.handle}</div></div>
-        <button class="btn-ghost" style="font-size:11px;padding:5px 10px" onclick="removerCanal(${i})">remover</button>
-      </div>
-      <div style="font-size:13px;color:#aaa">${ch.notas||''}</div>
-    `;
+    d.innerHTML = `<div class="card-header"><div><div class="ref-name">${ch.nome}</div><div class="ref-handle">${ch.handle}</div></div><button class="btn-ghost" style="font-size:11px;padding:5px 10px" onclick="removerCanal(${i})">remover</button></div><div style="font-size:13px;color:#aaa">${ch.notas||''}</div>`;
     c.appendChild(d);
   });
 }
 
-function removerCanal(i) {
-  const c = S.canais; c.splice(i,1); S.canais = c; renderCanaisExtra();
-}
+function removerCanal(i) { const c = S.canais; c.splice(i,1); S.canais = c; renderCanaisExtra(); }
 
-// ═══════ CALENDÁRIO ═══════
 function renderCalendario() {
   const g = document.getElementById('cal-grid');
   g.innerHTML = '';
@@ -957,11 +612,7 @@ function renderCalendario() {
     const d = document.createElement('div');
     if (pauta) {
       d.className = 'cal-week ' + (pauta.status==='publicado'?'published':'planned');
-      d.innerHTML = `
-        <div class="cal-week-label">${label}</div>
-        <div class="cal-week-title">${pauta.titulo}</div>
-        <div class="cal-week-status">${pauta.status==='publicado'?'✓ publicado':'○ planejado'}</div>
-      `;
+      d.innerHTML = `<div class="cal-week-label">${label}</div><div class="cal-week-title">${pauta.titulo}</div><div class="cal-week-status">${pauta.status==='publicado'?'✓ publicado':'○ planejado'}</div>`;
       if (pauta.status==='planejado') d.onclick = () => { if(confirm('Marcar como publicado?')) { pauta.status='publicado'; const p=S.pautas; S.pautas=p; renderCalendario(); updateDashboard(); } };
     } else {
       d.className = 'cal-week empty';
@@ -972,10 +623,8 @@ function renderCalendario() {
   }
 }
 
-// ═══════ CONFIG ═══════
 function loadConfigFields() {
-  const k = S.apiKey;
-  if (k) document.getElementById('yt-api-key').value = k;
+  if (S.apiKey) document.getElementById('yt-api-key').value = S.apiKey;
   const ids = S.channelIds;
   if (ids.danieldalen) document.getElementById('id-danieldalen').value = ids.danieldalen;
   if (ids.daniellima)  document.getElementById('id-daniellima').value  = ids.daniellima;
@@ -985,9 +634,7 @@ function loadConfigFields() {
 
 function salvarApiKey() {
   const k = document.getElementById('yt-api-key').value.trim();
-  if (!k) return;
-  S.apiKey = k;
-  toast('✓ Chave salva!');
+  if (!k) return; S.apiKey = k; toast('✓ Chave salva!');
 }
 
 async function testarApi() {
@@ -999,11 +646,8 @@ async function testarApi() {
     const r = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=id&id=dQw4w9WgXcQ&key=${k}`);
     const d = await r.json();
     if (d.error) throw new Error(d.error.message);
-    st.textContent = '✓ Conexão OK'; st.style.color = 'var(--green)';
-    S.apiKey = k;
-  } catch(e) {
-    st.textContent = '✗ Erro: ' + e.message; st.style.color = 'var(--accent2)';
-  }
+    st.textContent = '✓ Conexão OK'; st.style.color = 'var(--green)'; S.apiKey = k;
+  } catch(e) { st.textContent = '✗ Erro: ' + e.message; st.style.color = 'var(--accent2)'; }
 }
 
 function salvarChannelIds() {
@@ -1016,7 +660,6 @@ function salvarChannelIds() {
   toast('✓ IDs salvos!');
 }
 
-// ═══════ INIT ═══════
 updateDashboard();
 </script>
 </body>
