@@ -776,6 +776,47 @@
 }
 .c-cal-delete-btn:hover { color: #ff4444; }
 
+/* Drag and drop */
+.c-cal-drag-handle {
+  color: var(--c-muted2);
+  font-size: 14px;
+  cursor: grab;
+  flex-shrink: 0;
+  padding: 0 4px 0 0;
+  user-select: none;
+}
+.c-cal-drag-handle:active { cursor: grabbing; }
+.c-cal-pauta-item.dragging {
+  opacity: 0.35;
+  border-style: dashed;
+}
+.c-cal-row.drag-over {
+  border-color: var(--c-accent);
+  background: rgba(232, 255, 71, 0.04);
+}
+.c-cal-row.drag-over.empty {
+  opacity: 1;
+  border-left-color: var(--c-accent);
+  border-left-style: solid;
+}
+.c-cal-drop-hint {
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  color: var(--c-accent);
+  letter-spacing: 1px;
+  animation: pulse 1s ease-in-out infinite;
+}
+.c-cal-drag-hint {
+  color: var(--c-accent);
+  font-size: 10px;
+  font-family: var(--font-mono), monospace;
+  letter-spacing: 0.5px;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
 /* Trends */
 .c-trend-item {
   display: flex;
