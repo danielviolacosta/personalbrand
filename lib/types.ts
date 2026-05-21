@@ -59,6 +59,7 @@ export interface LinkedInPost {
   status: 'rascunho' | 'publicado'
   semana: string       // week label "18/05 – 24/05"
   data: string         // ISO date
+  imagem_brief?: string // visual/image instructions for Canva or designer
 }
 
 export interface RefPostLinkedIn {

@@ -285,6 +285,13 @@ export default function CalendarioLinkedIn({
                 {selected.conteudo.length} caracteres
               </div>
 
+              {selected.imagem_brief && (
+                <div className="c-li-visual-brief" style={{ marginTop: 14 }}>
+                  <span className="c-li-visual-label">🎨 Visual</span>
+                  <span className="c-li-visual-text">{selected.imagem_brief}</span>
+                </div>
+              )}
+
               <div className="c-row" style={{ marginTop: 16 }}>
                 <button
                   className="c-btn"

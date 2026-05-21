@@ -252,6 +252,7 @@ ${regras}`
       status: 'rascunho',
       semana: weekLabel(0),
       data: new Date().toISOString(),
+      imagem_brief: post.imagem_brief || undefined,
     })
     setSavedSet(prev => new Set([...prev, idx]))
     showToast('✓ Post salvo no calendário!')
