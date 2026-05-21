@@ -36,31 +36,34 @@ export default function CalendarioLinkedIn({
   const { showToast } = useToast()
   const [dragging, setDragging] = useState<string | null>(null)
   const [dragOver, setDragOver] = useState<string | null>(null)
+  const [selected, setSelected] = useState<LinkedInPost | null>(null)
 
   const weeks = useMemo(
     () => Array.from({ length: WEEKS_SHOWN }, (_, i) => weekLabel(i - 1)),
     []
   )
 
-  function marcarPublicado(id: string) {
+  function marcarPublicado(id: string, fromModal = false) {
     const post = posts.find(p => p.id === id)
     if (!post) return
     const already = post.status === 'publicado'
-    onSave(posts.map(p => p.id === id ? { ...p, status: already ? 'rascunho' : 'publicado' } : p))
+    const next = posts.map(p => p.id === id ? { ...p, status: already ? 'rascunho' as const : 'publicado' as const } : p)
+    onSave(next)
     showToast(already ? 'Marcado como rascunho' : '✓ Publicado!')
+    if (fromModal && selected?.id === id) {
+      setSelected({ ...selected, status: already ? 'rascunho' : 'publicado' })
+    }
   }
 
   function deletar(id: string) {
     if (!confirm('Remover este post do calendário?')) return
     onSave(posts.filter(p => p.id !== id))
+    if (selected?.id === id) setSelected(null)
     showToast('Post removido')
   }
 
   function onDragStart(id: string) { setDragging(id) }
-  function onDragOver(e: React.DragEvent, week: string) {
-    e.preventDefault()
-    setDragOver(week)
-  }
+  function onDragOver(e: React.DragEvent, week: string) { e.preventDefault(); setDragOver(week) }
   function onDrop(e: React.DragEvent, week: string) {
     e.preventDefault()
     if (!dragging) return
@@ -70,8 +73,21 @@ export default function CalendarioLinkedIn({
   }
   function onDragEnd() { setDragging(null); setDragOver(null) }
 
-  const totalPosts    = posts.length
+  const totalPosts     = posts.length
   const totalPublished = posts.filter(p => p.status === 'publicado').length
+
+  // Parse hashtags from post content (they're appended at the end as "#tag1 #tag2 ...")
+  function parseContent(conteudo: string) {
+    const lines = conteudo.split('\n')
+    const lastLine = lines[lines.length - 1] ?? ''
+    const hasHashtags = lastLine.trim().startsWith('#')
+    if (hasHashtags) {
+      const body = lines.slice(0, -1).join('\n').replace(/\n+$/, '')
+      const tags = lastLine.trim().split(/\s+/).filter(t => t.startsWith('#'))
+      return { body, tags }
+    }
+    return { body: conteudo, tags: [] }
+  }
 
   return (
     <div>
@@ -92,11 +108,11 @@ export default function CalendarioLinkedIn({
 
       <div className="c-calendar-list">
         {weeks.map(week => {
-          const weekPosts = posts.filter(p => p.semana === week)
+          const weekPosts      = posts.filter(p => p.semana === week)
           const publishedCount = weekPosts.filter(p => p.status === 'publicado').length
-          const goalMet = publishedCount >= META_SEMANAL
-          const isEmpty = weekPosts.length === 0
-          const isOver  = dragOver === week
+          const goalMet        = publishedCount >= META_SEMANAL
+          const isEmpty        = weekPosts.length === 0
+          const isOver         = dragOver === week
 
           return (
             <div
@@ -108,8 +124,6 @@ export default function CalendarioLinkedIn({
             >
               <div className="c-cal-row-header">
                 <span className="c-cal-row-label">{week}</span>
-
-                {/* Goal indicator */}
                 <div className="c-li-cal-goal">
                   {Array.from({ length: META_SEMANAL }).map((_, i) => (
                     <div
@@ -119,11 +133,9 @@ export default function CalendarioLinkedIn({
                   ))}
                   {goalMet && <span className="c-li-cal-check">✓</span>}
                 </div>
-
                 {weekPosts.length > 1 && (
                   <span className="c-cal-row-count">{weekPosts.length}</span>
                 )}
-
                 {isOver && dragging && (
                   <span className="c-cal-drop-hint">soltar aqui →</span>
                 )}
@@ -144,9 +156,13 @@ export default function CalendarioLinkedIn({
                         {TIPO_LABEL[p.tipo]}
                       </span>
                       <div className="c-cal-pauta-dot" />
-                      <div className="c-cal-pauta-titulo">
+                      <button
+                        className="c-cal-pauta-titulo c-cal-pauta-titulo-btn"
+                        onClick={() => setSelected(p)}
+                        title="Ver post completo"
+                      >
                         {p.conteudo.split('\n')[0].slice(0, 80)}{p.conteudo.length > 80 ? '…' : ''}
-                      </div>
+                      </button>
                       <div className="c-cal-pauta-actions">
                         <button
                           className={`c-cal-pauta-badge ${p.status === 'publicado' ? 'published' : 'planned'}`}
@@ -155,13 +171,7 @@ export default function CalendarioLinkedIn({
                         >
                           {p.status === 'publicado' ? '✓ publicado' : 'publicar'}
                         </button>
-                        <button
-                          className="c-cal-delete-btn"
-                          onClick={() => deletar(p.id)}
-                          title="Remover"
-                        >
-                          ×
-                        </button>
+                        <button className="c-cal-delete-btn" onClick={() => deletar(p.id)} title="Remover">×</button>
                       </div>
                     </div>
                   ))}
@@ -179,6 +189,61 @@ export default function CalendarioLinkedIn({
           <div style={{ fontSize: 12, marginTop: 6 }}>Gere um post e clique em "Salvar no calendário"</div>
         </div>
       )}
+
+      {/* ── Modal ── */}
+      {selected && (() => {
+        const { body, tags } = parseContent(selected.conteudo)
+        return (
+          <div className="c-modal-overlay" onClick={() => setSelected(null)}>
+            <div className="c-modal-box" onClick={e => e.stopPropagation()}>
+              <button className="c-modal-close" onClick={() => setSelected(null)}>×</button>
+
+              <div className="c-modal-header">
+                <div className="c-modal-tags">
+                  <span className={`c-li-tipo-tag ${TIPO_COLOR[selected.tipo]}`}>
+                    {TIPO_LABEL[selected.tipo]}
+                  </span>
+                  <span className="c-tag">{selected.semana}</span>
+                  <span className={`c-tag ${selected.status === 'publicado' ? 'green' : 'yellow'}`}>
+                    {selected.status === 'publicado' ? '✓ publicado' : 'rascunho'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="c-li-post-preview" style={{ marginTop: 16 }}>
+                {body.split('\n').map((line, i) =>
+                  line ? <p key={i}>{line}</p> : <br key={i} />
+                )}
+                {tags.length > 0 && (
+                  <div className="c-li-post-hashtags">
+                    {tags.map(t => <span key={t}>{t}</span>)}
+                  </div>
+                )}
+              </div>
+
+              <div className="c-li-chars">
+                {selected.conteudo.length} caracteres
+              </div>
+
+              <div className="c-row" style={{ marginTop: 16 }}>
+                <button
+                  className="c-btn"
+                  onClick={() => marcarPublicado(selected.id, true)}
+                >
+                  {selected.status === 'publicado' ? '↩ Voltar para rascunho' : '✓ Marcar como publicado'}
+                </button>
+                <button className="c-btn-ghost" onClick={() => {
+                  navigator.clipboard.writeText(selected.conteudo)
+                  showToast('✓ Post copiado!')
+                }}>
+                  📋 Copiar
+                </button>
+                <button className="c-btn-ghost" onClick={() => setSelected(null)}>Fechar</button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }
