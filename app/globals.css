@@ -1187,24 +1187,32 @@
 }
 .c-li-ref-img-remove:hover { background: rgba(220,40,40,.85); }
 
-/* Thumbnail in saved card */
-.c-li-ref-img-thumb {
-  margin-bottom: 12px;
-  border-radius: 6px;
+/* Card layout: body left + mini thumb right */
+.c-li-ref-card-inner {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+.c-li-ref-card-body { flex: 1; min-width: 0; }
+
+/* Small thumbnail on the right */
+.c-li-ref-img-mini {
+  flex-shrink: 0;
+  width: 72px;
+  height: 72px;
+  border-radius: 7px;
   overflow: hidden;
   cursor: zoom-in;
   border: 1px solid var(--c-border);
-  max-height: 180px;
-  display: flex;
-  align-items: center;
   background: var(--c-bg3);
+  transition: border-color .15s;
 }
-.c-li-ref-img-thumb img {
+.c-li-ref-img-mini img {
   width: 100%;
-  max-height: 180px;
-  object-fit: contain;
+  height: 100%;
+  object-fit: cover;
 }
-.c-li-ref-img-thumb:hover { border-color: var(--c-accent3); }
+.c-li-ref-img-mini:hover { border-color: var(--c-accent3); }
 
 /* Lightbox */
 .c-li-ref-img-lightbox {

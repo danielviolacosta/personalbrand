@@ -372,28 +372,31 @@ export default function RefsLinkedIn() {
               />
             ) : (
               /* ── View mode ── */
-              <>
+              <div className="c-li-ref-card-inner">
+                <div className="c-li-ref-card-body">
+                  <div className="c-li-ref-header">
+                    <span className={`c-li-tipo-tag ${TIPO_COLOR[r.tipo]}`}>
+                      {TIPOS.find(t => t.id === r.tipo)?.label}
+                    </span>
+                    {r.autor && <span className="c-li-ref-autor">@{r.autor.replace('@', '')}</span>}
+                    {r.engajamento && <span className="c-li-ref-eng">{r.engajamento}</span>}
+                    <button className="c-li-ref-edit-btn" onClick={() => startEdit(r)} title="Editar">✏️</button>
+                    <button className="c-cal-delete-btn" onClick={() => deletar(r.id)} title="Remover">×</button>
+                  </div>
+                  <div className="c-li-ref-conteudo">{r.conteudo}</div>
+                  {r.nota && <div className="c-li-ref-nota">→ {r.nota}</div>}
+                </div>
+
                 {r.imagem && (
-                  <div className="c-li-ref-img-thumb" onClick={() => setExpandedImg(r.imagem!)} title="Ampliar">
-                    <img src={r.imagem} alt="Print do post" />
+                  <div
+                    className="c-li-ref-img-mini"
+                    onClick={() => setExpandedImg(r.imagem!)}
+                    title="Ver print"
+                  >
+                    <img src={r.imagem} alt="Print" />
                   </div>
                 )}
-                <div className="c-li-ref-header">
-                  <span className={`c-li-tipo-tag ${TIPO_COLOR[r.tipo]}`}>
-                    {TIPOS.find(t => t.id === r.tipo)?.label}
-                  </span>
-                  {r.autor && <span className="c-li-ref-autor">@{r.autor.replace('@', '')}</span>}
-                  {r.engajamento && <span className="c-li-ref-eng">{r.engajamento}</span>}
-                  <button
-                    className="c-li-ref-edit-btn"
-                    onClick={() => startEdit(r)}
-                    title="Editar referência"
-                  >✏️</button>
-                  <button className="c-cal-delete-btn" onClick={() => deletar(r.id)} title="Remover">×</button>
-                </div>
-                <div className="c-li-ref-conteudo">{r.conteudo}</div>
-                {r.nota && <div className="c-li-ref-nota">→ {r.nota}</div>}
-              </>
+              </div>
             )}
           </div>
         ))}
