@@ -22,7 +22,7 @@ interface GeneratedPauta {
   bloco3: string[]
 }
 
-type FieldId = 'registros' | 'aprendizado' | 'tom'
+type FieldId = 'registros' | 'aprendizado' | 'tom' | 'refinamento'
 
 interface SpeechRecResult {
   readonly isFinal: boolean
@@ -58,8 +58,9 @@ export default function GeradorPauta({ pautas, onSave, onNav }: Props) {
     registros: setRegistros,
     aprendizado: setAprendizado,
     tom: setTom,
+    refinamento: setRefinamento,
   }
-  const values: Record<FieldId, string> = { registros, aprendizado, tom }
+  const values: Record<FieldId, string> = { registros, aprendizado, tom, refinamento }
 
   const toggleMic = useCallback(
     (fieldId: FieldId) => {
@@ -102,18 +103,19 @@ export default function GeradorPauta({ pautas, onSave, onNav }: Props) {
       rec.start()
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [activeRec, showToast, registros, aprendizado, tom]
+    [activeRec, showToast, registros, aprendizado, tom, refinamento]
   )
 
   function buildYtContext(): string {
     const cache = getItem<Record<string, { title: string; views: number }[]>>('ytCache', {})
     if (!Object.keys(cache).length) {
-      return 'Padrões conhecidos: POV: títulos, formato narrativo, consistência semanal.'
+      return 'Sem dados de canais ainda. Use padrões de alto CTR do nicho empreendedorismo/building in public.'
     }
     let ctx = ''
     for (const [ch, videos] of Object.entries(cache)) {
-      ctx += `\n${ch}:\n`
-      videos.slice(0, 3).forEach(v => { ctx += `  - "${v.title}" (${v.views} views)\n` })
+      const sorted = [...videos].sort((a, b) => b.views - a.views)
+      ctx += `\n${ch} (top por views):\n`
+      sorted.slice(0, 5).forEach(v => { ctx += `  - "${v.title}" — ${v.views.toLocaleString()} views\n` })
     }
     return ctx
   }
@@ -146,10 +148,29 @@ export default function GeradorPauta({ pautas, onSave, onNav }: Props) {
     setLoading(true)
     setOutput(null)
 
-    const prompt = `Você é especialista em criação de conteúdo para YouTube no estilo "building in public" / vlog de empreendedor, formato narrativo (contar história).
+    const prompt = `Você é especialista em criação de conteúdo para YouTube no nicho empreendedorismo / building in public / vlog de fundador.
 
-REFERÊNCIAS DO CRIADOR (o que está funcionando para eles):
+VÍDEOS DE MAIOR PERFORMANCE DAS REFERÊNCIAS DO CRIADOR (analise os padrões de título que geraram mais views):
 ${buildYtContext()}
+
+Estude esses títulos: identifique o que têm em comum (tensão, especificidade, resultado, curiosidade) e use esses PADRÕES — não os formatos em si — para criar títulos originais e impactantes.
+
+TÍTULOS — REGRAS OBRIGATÓRIAS:
+Gere 1 título principal + 2 alternativos. Cada título deve usar uma fórmula diferente dos outros:
+• Resultado específico + obstáculo: "Como [resultado concreto] mesmo com [dificuldade real]"
+• Momento de virada: "O dia em que [evento específico] mudou tudo no meu [negócio/projeto]"
+• Contraintuitivo: "Por que eu [decisão inesperada] — e faria de novo"
+• Antes/depois com dado: "De [estado A] a [estado B]: o que ninguém te conta sobre [tema]"
+• Tensão direta: "[Ação tomada]. Aconteceu [resultado inesperado]. Aprendi [lição]"
+• Revelação interna: "A coisa que eu estava evitando encarar no meu [negócio/produto]"
+• Número + impacto: "[N] erros / decisões / aprendizados que [consequência específica]"
+
+Regras de qualidade para TODOS os títulos:
+- Entre 6 e 12 palavras — sem enrolação
+- Específico: inclua número, valor, tempo ou resultado concreto sempre que possível
+- Tensão emocional que faça o espectador precisar saber o que aconteceu
+- "POV:" só se for genuinamente o formato mais impactante para ESSA história — não como padrão
+- Sem clickbait: o vídeo deve entregar exatamente o que o título promete
 
 O vídeo deve ter 15-20 minutos com TRÊS BLOCOS narrativos:
 - BLOCO 1 (4-5 min): Hook — abre no momento mais tenso/curioso da história
@@ -336,13 +357,25 @@ IMPORTANTE: Responda SOMENTE com JSON puro. Sem texto antes, sem texto depois, s
           </div>
 
           <div className="c-refine-box">
-            <label className="c-label">Ajustes e melhorias — diga o que quer mudar</label>
-            <textarea
-              className="c-textarea short"
-              value={refinamento}
-              onChange={e => setRefinamento(e.target.value)}
-              placeholder="Ex: deixa o título mais impactante, adiciona mais tensão no bloco 1, muda o tom pra mais leve..."
-            />
+            <label className="c-label">Ajustes e melhorias — fale ou escreva o que quer mudar</label>
+            <div className="c-field-wrap">
+              <textarea
+                className="c-textarea short"
+                value={refinamento}
+                onChange={e => setRefinamento(e.target.value)}
+                placeholder="Ex: título mais impactante, mais tensão no bloco 1, tom mais leve..."
+              />
+              <button
+                className={`c-mic-btn${activeRec === 'refinamento' ? ' recording' : ''}`}
+                onClick={() => toggleMic('refinamento')}
+                title="Gravar voz"
+              >
+                🎤
+              </button>
+            </div>
+            {activeRec === 'refinamento' && (
+              <div className="c-mic-status active">● Gravando... fale agora</div>
+            )}
             <button className="c-btn-refine" onClick={refinarPauta} disabled={loading}>
               ✦ Refinar com esses ajustes
             </button>
