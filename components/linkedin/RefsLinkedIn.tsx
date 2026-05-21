@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { getItem, setItem } from '@/lib/storage'
 import { useToast } from '@/lib/toast-context'
 import type { RefPostLinkedIn, PostTipo } from '@/lib/types'
@@ -23,39 +23,89 @@ const TIPO_COLOR: Record<PostTipo, string> = {
   video_demo:  'li-t-video',
 }
 
-const EMPTY_FORM = { autor: '', conteudo: '', tipo: 'dica' as PostTipo, engajamento: '', nota: '' }
+const EMPTY_FORM = { autor: '', conteudo: '', tipo: 'dica' as PostTipo, engajamento: '', nota: '', imagem: '' }
+
+// Compress image to JPEG ≤ 900px wide, quality 0.75
+function compressImage(dataUrl: string, maxWidth = 900, quality = 0.75): Promise<string> {
+  return new Promise(resolve => {
+    const img = new window.Image()
+    img.onload = () => {
+      const ratio = Math.min(1, maxWidth / img.width)
+      const w = Math.round(img.width * ratio)
+      const h = Math.round(img.height * ratio)
+      const canvas = document.createElement('canvas')
+      canvas.width = w; canvas.height = h
+      canvas.getContext('2d')!.drawImage(img, 0, 0, w, h)
+      resolve(canvas.toDataURL('image/jpeg', quality))
+    }
+    img.src = dataUrl
+  })
+}
 
 export default function RefsLinkedIn() {
   const { showToast } = useToast()
+  const fileRef = useRef<HTMLInputElement>(null)
   const [refs, setRefs] = useState<RefPostLinkedIn[]>([])
   const [form, setForm] = useState(EMPTY_FORM)
   const [adding, setAdding] = useState(false)
   const [urlInput, setUrlInput] = useState('')
   const [fetchingUrl, setFetchingUrl] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
+  const [expandedImg, setExpandedImg] = useState<string | null>(null)
 
   useEffect(() => {
     setRefs(getItem<RefPostLinkedIn[]>('liRefs', []))
   }, [])
 
-  function save(next: RefPostLinkedIn[]) {
-    setRefs(next)
-    setItem('liRefs', next)
-  }
+  // ── Global paste listener (active only when form is open) ─────────────────
+  useEffect(() => {
+    if (!adding) return
+    async function onPaste(e: ClipboardEvent) {
+      const items = Array.from(e.clipboardData?.items ?? [])
+      const imgItem = items.find(i => i.type.startsWith('image/'))
+      if (!imgItem) return
+      const file = imgItem.getAsFile()
+      if (!file) return
+      const reader = new FileReader()
+      reader.onload = async ev => {
+        const raw = ev.target?.result as string
+        const compressed = await compressImage(raw)
+        setForm(f => ({ ...f, imagem: compressed }))
+        showToast('✓ Print colado!')
+      }
+      reader.readAsDataURL(file)
+    }
+    document.addEventListener('paste', onPaste)
+    return () => document.removeEventListener('paste', onPaste)
+  }, [adding, showToast])
+
+  function save(next: RefPostLinkedIn[]) { setRefs(next); setItem('liRefs', next) }
 
   function adicionar() {
     if (!form.conteudo.trim()) { showToast('Cole o texto do post primeiro.'); return }
-    const ref: RefPostLinkedIn = { ...form, id: Date.now().toString() }
-    save([ref, ...refs])
-    setForm(EMPTY_FORM)
-    setUrlInput('')
-    setAdding(false)
+    save([{ ...form, id: Date.now().toString() }, ...refs])
+    setForm(EMPTY_FORM); setUrlInput(''); setAdding(false)
     showToast('✓ Referência adicionada!')
   }
 
   function deletar(id: string) {
     if (!confirm('Remover esta referência?')) return
     save(refs.filter(r => r.id !== id))
+  }
+
+  // ── File input (click-to-upload alternative) ──────────────────────────────
+  function handleFileInput(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = async ev => {
+      const raw = ev.target?.result as string
+      const compressed = await compressImage(raw)
+      setForm(f => ({ ...f, imagem: compressed }))
+      showToast('✓ Imagem carregada!')
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
   }
 
   // ── URL fetch ─────────────────────────────────────────────────────────────
@@ -65,20 +115,17 @@ export default function RefsLinkedIn() {
     setFetchingUrl(true)
     try {
       const res = await fetch('/api/fetch-url', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url }),
       })
       const data = await res.json()
       if (data.error) throw new Error(data.error)
       if (!data.text || data.text.length < 30) throw new Error('Não foi possível extrair texto desta página')
       setForm(f => ({ ...f, conteudo: data.text }))
-      showToast('✓ Texto extraído! Clique em "Analisar com IA" para preencher automaticamente.')
+      showToast('✓ Texto extraído! Clique em "Analisar com IA".')
     } catch (err) {
-      showToast('Erro: ' + (err instanceof Error ? err.message : 'Erro desconhecido'))
-    } finally {
-      setFetchingUrl(false)
-    }
+      showToast('Erro: ' + (err instanceof Error ? err.message : 'Erro'))
+    } finally { setFetchingUrl(false) }
   }
 
   // ── AI analysis ───────────────────────────────────────────────────────────
@@ -90,19 +137,14 @@ export default function RefsLinkedIn() {
 
 {"tipo":"dica","autor":"nome do autor se identificável ou string vazia","nota":"1-2 linhas diretas explicando por que este post funciona (hook, estrutura, dado, emoção, CTA etc.)"}
 
-Tipos possíveis: noticia, produto, prova_social, dica, personal, video_demo
+Tipos: noticia, produto, prova_social, dica, personal, video_demo
 
 Post:
 ${form.conteudo.slice(0, 2000)}`
 
       const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 300,
-          messages: [{ role: 'user', content: prompt }],
-        }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 300, messages: [{ role: 'user', content: prompt }] }),
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
@@ -114,15 +156,13 @@ ${form.conteudo.slice(0, 2000)}`
       setForm(f => ({
         ...f,
         tipo:  TIPOS.some(t => t.id === result.tipo) ? (result.tipo as PostTipo) : f.tipo,
-        autor: result.autor?.trim() ? result.autor.trim() : f.autor,
-        nota:  result.nota?.trim()  ? result.nota.trim()  : f.nota,
+        autor: result.autor?.trim() || f.autor,
+        nota:  result.nota?.trim()  || f.nota,
       }))
-      showToast('✓ Análise pronta — revise os campos e salve!')
+      showToast('✓ Análise pronta — revise e salve!')
     } catch (err) {
       showToast('Erro ao analisar: ' + (err instanceof Error ? err.message : 'Erro'))
-    } finally {
-      setAnalyzing(false)
-    }
+    } finally { setAnalyzing(false) }
   }
 
   const canAnalyze = form.conteudo.trim().length > 40
@@ -143,8 +183,39 @@ ${form.conteudo.slice(0, 2000)}`
       {adding && (
         <div className="c-card" style={{ marginBottom: 20 }}>
 
+          {/* ── Print / imagem ── */}
+          <div>
+            <label className="c-label" style={{ marginTop: 0 }}>
+              Print do post — Cmd+V em qualquer lugar da página
+            </label>
+            {form.imagem ? (
+              <div className="c-li-ref-img-zone has-image">
+                <img src={form.imagem} className="c-li-ref-img-preview" alt="Print colado" />
+                <button
+                  className="c-li-ref-img-remove"
+                  onClick={() => setForm(f => ({ ...f, imagem: '' }))}
+                  title="Remover imagem"
+                >×</button>
+              </div>
+            ) : (
+              <div
+                className="c-li-ref-img-zone"
+                onClick={() => fileRef.current?.click()}
+                role="button"
+                tabIndex={0}
+                onKeyDown={e => e.key === 'Enter' && fileRef.current?.click()}
+              >
+                <div className="c-li-ref-img-placeholder">
+                  <span>📸</span>
+                  <span>Cmd+V para colar print · ou clique para carregar arquivo</span>
+                </div>
+              </div>
+            )}
+            <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileInput} />
+          </div>
+
           {/* ── URL fetch ── */}
-          <label className="c-label" style={{ marginTop: 0 }}>Buscar por URL</label>
+          <label className="c-label">Buscar por URL</label>
           <div className="c-li-ref-url-row">
             <input
               className="c-input"
@@ -153,16 +224,12 @@ ${form.conteudo.slice(0, 2000)}`
               onKeyDown={e => e.key === 'Enter' && !fetchingUrl && buscarUrl()}
               placeholder="https://linkedin.com/posts/... ou qualquer artigo público"
             />
-            <button
-              className="c-btn-ghost"
-              onClick={buscarUrl}
-              disabled={fetchingUrl || !urlInput.trim()}
-            >
+            <button className="c-btn-ghost" onClick={buscarUrl} disabled={fetchingUrl || !urlInput.trim()}>
               {fetchingUrl ? '⏳' : '🔗 Buscar'}
             </button>
           </div>
           <div className="c-li-ref-url-hint">
-            Funciona para artigos, blogs e notícias. Posts LinkedIn: cole o texto manualmente se der erro.
+            Funciona para artigos e blogs. Posts LinkedIn: cole o texto manualmente se der erro.
           </div>
 
           <div className="c-li-ref-divider"><span>ou cole o texto diretamente</span></div>
@@ -181,14 +248,8 @@ ${form.conteudo.slice(0, 2000)}`
           {/* ── Analisar com IA ── */}
           {canAnalyze && (
             <div style={{ marginTop: 10 }}>
-              <button
-                className="c-btn-refine c-btn-analyze"
-                onClick={analisarComIA}
-                disabled={analyzing}
-              >
-                {analyzing
-                  ? '⏳ Analisando…'
-                  : '✦ Analisar com IA — preenche tipo e "por que funcionou" automaticamente'}
+              <button className="c-btn-refine c-btn-analyze" onClick={analisarComIA} disabled={analyzing}>
+                {analyzing ? '⏳ Analisando…' : '✦ Analisar com IA — preenche tipo e "por que funcionou" automaticamente'}
               </button>
             </div>
           )}
@@ -213,9 +274,7 @@ ${form.conteudo.slice(0, 2000)}`
                   key={t.id}
                   className={`c-li-tipo-btn${form.tipo === t.id ? ' active' : ''}`}
                   onClick={() => setForm(f => ({ ...f, tipo: t.id }))}
-                >
-                  {t.label}
-                </button>
+                >{t.label}</button>
               ))}
             </div>
           </div>
@@ -244,9 +303,7 @@ ${form.conteudo.slice(0, 2000)}`
 
           <div className="c-row" style={{ marginTop: 16 }}>
             <button className="c-btn" onClick={adicionar}>Salvar referência</button>
-            <button className="c-btn-ghost" onClick={() => { setForm(EMPTY_FORM); setUrlInput('') }}>
-              Limpar
-            </button>
+            <button className="c-btn-ghost" onClick={() => { setForm(EMPTY_FORM); setUrlInput('') }}>Limpar</button>
           </div>
         </div>
       )}
@@ -262,6 +319,11 @@ ${form.conteudo.slice(0, 2000)}`
       <div className="c-li-ref-list">
         {refs.map(r => (
           <div key={r.id} className="c-li-ref-card">
+            {r.imagem && (
+              <div className="c-li-ref-img-thumb" onClick={() => setExpandedImg(r.imagem!)} title="Ampliar">
+                <img src={r.imagem} alt="Print do post" />
+              </div>
+            )}
             <div className="c-li-ref-header">
               <span className={`c-li-tipo-tag ${TIPO_COLOR[r.tipo]}`}>
                 {TIPOS.find(t => t.id === r.tipo)?.label}
@@ -275,6 +337,16 @@ ${form.conteudo.slice(0, 2000)}`
           </div>
         ))}
       </div>
+
+      {/* ── Lightbox ── */}
+      {expandedImg && (
+        <div className="c-modal-overlay" onClick={() => setExpandedImg(null)}>
+          <div className="c-li-ref-img-lightbox" onClick={e => e.stopPropagation()}>
+            <button className="c-modal-close" onClick={() => setExpandedImg(null)}>×</button>
+            <img src={expandedImg} alt="Print ampliado" />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

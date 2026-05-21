@@ -68,6 +68,7 @@ export interface RefPostLinkedIn {
   tipo: PostTipo
   engajamento: string  // "1.2k reações", "340 comentários"
   nota: string         // why it worked
+  imagem?: string      // base64 compressed JPEG (screenshot)
 }
 
 export interface SaasContext {
