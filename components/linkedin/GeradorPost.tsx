@@ -1,35 +1,29 @@
 'use client'
 
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { getItem, setItem } from '@/lib/storage'
 import { useToast } from '@/lib/toast-context'
 import { weekLabel } from '@/lib/utils'
 import type { PostTipo, LinkedInPost, RefPostLinkedIn, SaasContext } from '@/lib/types'
 
+// ── Types ─────────────────────────────────────────────────────────────────────
 interface GeneratedPost {
+  tipo: PostTipo
   conteudo: string
   hashtags: string[]
-  dica_visual: string
+  imagem_brief: string
 }
 
-interface SpeechRecResult { readonly isFinal: boolean; readonly [i: number]: { readonly transcript: string } }
-interface SpeechRecEvent { readonly resultIndex: number; readonly results: { readonly length: number; readonly [i: number]: SpeechRecResult } }
-interface SpeechRec {
-  lang: string; continuous: boolean; interimResults: boolean
-  onresult: ((e: SpeechRecEvent) => void) | null
-  onerror: (() => void) | null; onend: (() => void) | null
-  start(): void; stop(): void
-}
-type SpeechRecCtor = new () => SpeechRec
+const DRAFT_KEY = 'liGeradorBatch'
 
-const TIPOS: { id: PostTipo; label: string; emoji: string; desc: string }[] = [
-  { id: 'noticia',      label: 'Notícia/Tendência', emoji: '📰', desc: 'Notícia do setor ligada ao seu negócio' },
-  { id: 'produto',      label: 'Produto/Feature',  emoji: '⚡', desc: 'Feature, atualização ou caso de uso do SaaS' },
-  { id: 'prova_social', label: 'Prova Social',      emoji: '🏆', desc: 'Resultado de cliente, case, depoimento' },
-  { id: 'dica',         label: 'Dica Prática',      emoji: '💡', desc: 'Dica acionável para o ICP' },
-  { id: 'personal',     label: 'Personal Brand',    emoji: '🧭', desc: 'Sua jornada, erros, aprendizados como founder' },
-  { id: 'video_demo',   label: 'Vídeo/Demo',        emoji: '🎬', desc: 'Script ou legenda para vídeo demonstrativo' },
-]
+const TIPO_LABEL: Record<PostTipo, string> = {
+  noticia:     'Notícia/Tendência',
+  produto:     'Produto/Feature',
+  prova_social:'Prova Social',
+  dica:        'Dica Prática',
+  personal:    'Personal Brand',
+  video_demo:  'Vídeo/Demo',
+}
 
 const TIPO_COLOR: Record<PostTipo, string> = {
   noticia:     'li-t-noticia',
@@ -40,263 +34,307 @@ const TIPO_COLOR: Record<PostTipo, string> = {
   video_demo:  'li-t-video',
 }
 
-const DRAFT_KEY = 'liGeradorDraft'
-interface Draft { tipo: PostTipo; contexto: string; output: GeneratedPost | null }
+const ALL_TIPOS: PostTipo[] = ['dica', 'produto', 'personal', 'noticia', 'prova_social', 'video_demo']
 
-export default function GeradorPost({ onSave }: { onSave: (p: LinkedInPost) => void }) {
-  const { showToast } = useToast()
-  const draft = getItem<Draft>(DRAFT_KEY, { tipo: 'dica', contexto: '', output: null })
+const TIPO_GUIDE: Record<PostTipo, string> = {
+  noticia:     'Conecte uma notícia/tendência do mercado ao problema que o produto resolve.',
+  produto:     'Mostre como uma feature resolve um problema real do ICP com exemplo concreto.',
+  prova_social:'Resultado de cliente com dados específicos — antes e depois.',
+  dica:        'Dica prática acionável que o ICP pode aplicar hoje. Valor primeiro.',
+  personal:    'Jornada como founder — erro, decisão difícil, aprendizado. Gera identificação.',
+  video_demo:  'Post de acompanhamento para vídeo curto 60-90s. Hook + por que vale assistir.',
+}
 
-  const [tipo, setTipo] = useState<PostTipo>(draft.tipo)
-  const [contexto, setContexto] = useState(draft.contexto)
-  const [output, setOutput] = useState<GeneratedPost | null>(draft.output)
-  const [loading, setLoading] = useState(false)
-  const [recording, setRecording] = useState(false)
-  const [copied, setCopied] = useState(false)
-  const recRef = useRef<SpeechRec | null>(null)
+// Pick 3 varied tipos, prioritizing those not used recently
+function pickTipos(recentPosts: LinkedInPost[]): [PostTipo, PostTipo, PostTipo] {
+  const recent = recentPosts.slice(0, 9).map(p => p.tipo)
+  const scored = ALL_TIPOS.map(t => ({ tipo: t, lastIdx: recent.lastIndexOf(t) }))
+  scored.sort((a, b) => a.lastIdx - b.lastIdx) // -1 (never used) comes first
+  return [scored[0].tipo, scored[1].tipo, scored[2].tipo]
+}
 
-  useEffect(() => {
-    setItem<Draft>(DRAFT_KEY, { tipo, contexto, output })
-  }, [tipo, contexto, output])
+// Build messages array with optional vision context from ref images
+function buildMessages(tipos: [PostTipo, PostTipo, PostTipo]) {
+  const saas = getItem<SaasContext>('linkedinConfig', { produto: '', descricao: '', icp: '', diferenciais: '', casos: '', extras: '' })
+  const refs = getItem<RefPostLinkedIn[]>('liRefs', [])
 
-  const toggleMic = useCallback(() => {
-    type SRWindow = Window & { SpeechRecognition?: SpeechRecCtor; webkitSpeechRecognition?: SpeechRecCtor }
-    const SR = (window as SRWindow).SpeechRecognition || (window as SRWindow).webkitSpeechRecognition
-    if (!SR) { showToast('Use Chrome para gravação de voz'); return }
-    if (recording) { recRef.current?.stop(); setRecording(false); return }
-    const rec = new SR()
-    rec.lang = 'pt-BR'; rec.continuous = true; rec.interimResults = true
-    recRef.current = rec; setRecording(true)
-    let final = contexto
-    rec.onresult = (e: SpeechRecEvent) => {
-      let interim = ''
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        if (e.results[i].isFinal) final += e.results[i][0].transcript + ' '
-        else interim = e.results[i][0].transcript
-      }
-      setContexto(final + interim)
-    }
-    const stop = () => setRecording(false)
-    rec.onerror = stop; rec.onend = stop; rec.start()
-  }, [recording, contexto, showToast])
+  const saasBlock = [
+    saas.produto     && `PRODUTO: ${saas.produto}`,
+    saas.descricao   && `O QUE FAZ: ${saas.descricao}`,
+    saas.icp         && `ICP: ${saas.icp}`,
+    saas.diferenciais && `DIFERENCIAIS: ${saas.diferenciais}`,
+    saas.casos       && `PROVAS SOCIAIS: ${saas.casos}`,
+    saas.extras      && `CONTEXTO EXTRA: ${saas.extras}`,
+  ].filter(Boolean).join('\n') || 'SaaS de relacionamento com clientes via email e WhatsApp para equipes comerciais.'
 
-  function buildPrompt(): string {
-    const saas = getItem<SaasContext>('linkedinConfig', { produto: '', descricao: '', icp: '', diferenciais: '', casos: '', extras: '' })
-    const refs = getItem<RefPostLinkedIn[]>('liRefs', [])
-    const tipoRefs = refs.filter(r => r.tipo === tipo).slice(0, 2)
-    const anyRefs = tipoRefs.length < 2 ? [...tipoRefs, ...refs.filter(r => r.tipo !== tipo).slice(0, 2 - tipoRefs.length)] : tipoRefs
+  const refBlock = refs.length > 0
+    ? '\n\nPOSTS DE REFERÊNCIA — aprenda o estilo e abordagem (não copie):\n' +
+      refs.slice(0, 5).map(r =>
+        `[${TIPO_LABEL[r.tipo]}] ${r.conteudo.slice(0, 400)}${r.nota ? `\n→ ${r.nota}` : ''}`
+      ).join('\n---\n')
+    : ''
 
-    const saasBlock = [
-      saas.produto && `PRODUTO: ${saas.produto}`,
-      saas.descricao && `O QUE FAZ: ${saas.descricao}`,
-      saas.icp && `ICP: ${saas.icp}`,
-      saas.diferenciais && `DIFERENCIAIS: ${saas.diferenciais}`,
-      saas.casos && `PROVAS SOCIAIS: ${saas.casos}`,
-      saas.extras && `CONTEXTO EXTRA: ${saas.extras}`,
-    ].filter(Boolean).join('\n')
+  const prompt = `Você é estrategista de conteúdo LinkedIn B2B. Gere exatamente 3 posts completos para publicar nesta semana.
 
-    const refBlock = anyRefs.length
-      ? '\n\nEXEMPLOS DE POSTS QUE FUNCIONARAM BEM (use como referência de estilo, não copie):\n' +
-        anyRefs.map(r => `---\n${r.conteudo}${r.nota ? `\n[por que funcionou: ${r.nota}]` : ''}`).join('\n')
-      : ''
+CONTEXTO DO PRODUTO:
+${saasBlock}${refBlock}
 
-    const tipoInfo = TIPOS.find(t => t.id === tipo)!
-    const tipoGuide: Record<PostTipo, string> = {
-      noticia:     'Conecte uma notícia/tendência do mercado ao problema que seu produto resolve. Não seja corporativo — seja humano e direto.',
-      produto:     'Mostre como uma feature ou caso de uso específico resolve um problema real do ICP. Concreto, com exemplo prático.',
-      prova_social:'Conte o resultado de um cliente real (ou hipotético realista). Dados específicos geram mais credibilidade.',
-      dica:        'Dica prática e acionável que o ICP pode aplicar hoje. Pode ou não mencionar o produto — o valor vem primeiro.',
-      personal:    'História pessoal como founder/empreendedor. Vulnerabilidade, erro, virada. Conecta e gera identificação.',
-      video_demo:  'Post de acompanhamento para um vídeo demonstrativo curto (60-90s). Hook que explica o que o vídeo mostra e por que vale assistir.',
-    }
+POSTS A GERAR (nesta ordem exata):
+1. Tipo: ${tipos[0]} — ${TIPO_GUIDE[tipos[0]]}
+2. Tipo: ${tipos[1]} — ${TIPO_GUIDE[tipos[1]]}
+3. Tipo: ${tipos[2]} — ${TIPO_GUIDE[tipos[2]]}
 
-    return `Você é especialista em LinkedIn B2B para o nicho de CRM / relacionamento com cliente / equipes comerciais.
-
-${saasBlock || 'Produto: SaaS de relacionamento com clientes via email e WhatsApp para equipes comerciais.'}${refBlock}
-
-TIPO DE POST: ${tipoInfo.emoji} ${tipoInfo.label}
-DIRETRIZ: ${tipoGuide[tipo]}
-TÓPICO/CONTEXTO: ${contexto || 'Escolha o ângulo mais relevante baseado no tipo e no produto.'}
-
-Crie um post LinkedIn de alto engajamento. Regras obrigatórias:
-• Primeiras 2 linhas = HOOK que para o scroll (sem ponto final para forçar "ver mais")
+REGRAS PARA CADA POST:
+• Hook nas primeiras 2 linhas — sem ponto final (força "ver mais")
 • Linha em branco entre cada parágrafo
-• Linguagem direta, sem corporativês, pode usar emojis com moderação
+• Linguagem direta, humana, sem corporativês
 • CTA específico na última linha (pergunta, convite ou ação)
 • 3 a 5 hashtags ao final
-• Máximo 1200 caracteres no total
+• Máximo 1200 caracteres no post (sem hashtags)
 
-Responda SOMENTE com JSON puro. Sem texto antes, sem texto depois:
-{"conteudo":"post completo com \\n para quebras de linha","hashtags":["#tag1","#tag2","#tag3"],"dica_visual":"sugestão de imagem ou vídeo para acompanhar o post"}`
+IMAGEM BRIEF: Para cada post crie uma instrução de imagem para Canva/designer.
+Inclua: formato (1080×1080), fundo, cor/estilo, texto principal em destaque, elementos visuais, mood.
+Exemplo: "Fundo grafite escuro #1c1c1e. Texto central bold: '90% mais barato que um SDR'. Ícone WhatsApp verde à esquerda. Linha horizontal separadora em amarelo. Dark minimalista."
+
+Responda SOMENTE com JSON puro (array com exatamente 3 objetos), sem texto antes ou depois:
+[
+  {"tipo":"${tipos[0]}","conteudo":"post com \\n para quebras","hashtags":["#tag1","#tag2","#tag3"],"imagem_brief":"instrução detalhada"},
+  {"tipo":"${tipos[1]}","conteudo":"...","hashtags":[...],"imagem_brief":"..."},
+  {"tipo":"${tipos[2]}","conteudo":"...","hashtags":[...],"imagem_brief":"..."}
+]`
+
+  // Include ref images for visual style context (up to 3)
+  const imgRefs = refs.filter(r => r.imagem).slice(0, 3)
+
+  if (imgRefs.length > 0) {
+    return [{
+      role: 'user',
+      content: [
+        {
+          type: 'text',
+          text: `Analise ${imgRefs.length === 1 ? 'esta imagem de referência' : `estas ${imgRefs.length} imagens de referência`} para entender o estilo visual preferido (cores, tipografia, layout). Use como inspiração nos image_brief:\n`
+        },
+        ...imgRefs.map(r => ({
+          type: 'image',
+          source: {
+            type: 'base64',
+            media_type: 'image/jpeg',
+            data: r.imagem!.replace(/^data:image\/[^;]+;base64,/, ''),
+          }
+        })),
+        { type: 'text', text: prompt }
+      ]
+    }]
   }
 
-  async function gerar() {
-    if (!contexto.trim() && tipo !== 'produto' && tipo !== 'dica') {
-      showToast('Descreva o tópico ou contexto do post.')
-      return
-    }
+  return [{ role: 'user', content: prompt }]
+}
+
+// ── Main component ─────────────────────────────────────────────────────────────
+export default function GeradorPost({ onSave }: { onSave: (p: LinkedInPost) => void }) {
+  const { showToast } = useToast()
+  const [batch, setBatch] = useState<GeneratedPost[] | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [regenIdx, setRegenIdx] = useState<number | null>(null)
+  const [savedSet, setSavedSet] = useState<Set<number>>(new Set())
+  const [copiedIdx, setCopiedIdx] = useState<number | null>(null)
+  const [adjustTexts, setAdjustTexts] = useState(['', '', ''])
+
+  useEffect(() => {
+    const saved = getItem<GeneratedPost[] | null>(DRAFT_KEY, null)
+    if (saved?.length) setBatch(saved)
+  }, [])
+
+  useEffect(() => {
+    if (batch) setItem(DRAFT_KEY, batch)
+  }, [batch])
+
+  async function gerarBatch() {
     setLoading(true)
-    setOutput(null)
+    setSavedSet(new Set())
+    setAdjustTexts(['', '', ''])
     try {
+      const recentPosts = getItem<LinkedInPost[]>('liPosts', [])
+      const tipos = pickTipos(recentPosts)
+      const messages = buildMessages(tipos)
+
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1500, messages: [{ role: 'user', content: buildPrompt() }] }),
+        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 3000, messages }),
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
       if (data.error) throw new Error(data.error.message)
-      const text = (data.content || []).map((i: { text?: string }) => i.text || '').join('').trim()
-      const match = text.match(/\{[\s\S]*\}/)
+      const text = (data.content ?? []).map((i: { text?: string }) => i.text ?? '').join('').trim()
+      const match = text.match(/\[[\s\S]*\]/)
       if (!match) throw new Error('Resposta inválida da IA')
-      setOutput(JSON.parse(match[0]))
+      const posts = JSON.parse(match[0]) as GeneratedPost[]
+      if (!Array.isArray(posts) || posts.length === 0) throw new Error('Nenhum post gerado')
+      setBatch(posts.slice(0, 3))
     } catch (err) {
-      showToast('Erro ao gerar: ' + (err instanceof Error ? err.message : 'Erro desconhecido'))
+      showToast('Erro ao gerar: ' + (err instanceof Error ? err.message : 'Erro'))
     } finally {
       setLoading(false)
     }
   }
 
-  function salvarCalendario() {
-    if (!output) return
-    const post: LinkedInPost = {
+  async function handleRegen(idx: number, instructions?: string) {
+    if (!batch) return
+    setRegenIdx(idx)
+    try {
+      const post = batch[idx]
+      const saas = getItem<SaasContext>('linkedinConfig', { produto: '', descricao: '', icp: '', diferenciais: '', casos: '', extras: '' })
+      const refs = getItem<RefPostLinkedIn[]>('liRefs', [])
+      const refSnippet = refs.slice(0, 2).map(r => r.conteudo.slice(0, 300)).join('\n---\n')
+
+      const prompt = instructions?.trim()
+        ? `Refine este post LinkedIn aplicando os ajustes solicitados.
+
+POST ATUAL:
+${post.conteudo}
+Hashtags: ${post.hashtags.join(' ')}
+
+AJUSTES: ${instructions}
+
+Produto: ${saas.produto || 'SaaS de CRM'} | ICP: ${saas.icp || 'gestores comerciais'}
+Mantenha o tipo "${post.tipo}". Máx 1200 chars.`
+        : `Gere uma nova versão do post LinkedIn tipo "${post.tipo}".
+${TIPO_GUIDE[post.tipo]}
+Produto: ${saas.produto || 'SaaS de CRM'} | ICP: ${saas.icp || 'gestores comerciais'}
+${refSnippet ? `Referência de estilo:\n${refSnippet}` : ''}
+Hook forte, linguagem direta, CTA. Máx 1200 chars.`
+
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1200,
+          messages: [{ role: 'user', content: prompt + `\n\nResponda SOMENTE com JSON: {"tipo":"${post.tipo}","conteudo":"...","hashtags":[...],"imagem_brief":"..."}` }],
+        }),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      if (data.error) throw new Error(data.error.message)
+      const text = (data.content ?? []).map((i: { text?: string }) => i.text ?? '').join('').trim()
+      const match = text.match(/\{[\s\S]*\}/)
+      if (!match) throw new Error('Resposta inválida')
+      const next = [...batch]
+      next[idx] = JSON.parse(match[0]) as GeneratedPost
+      setBatch(next)
+      setSavedSet(prev => { const n = new Set(prev); n.delete(idx); return n })
+      if (instructions) setAdjustTexts(prev => { const n = [...prev]; n[idx] = ''; return n })
+    } catch (err) {
+      showToast('Erro: ' + (err instanceof Error ? err.message : 'Erro'))
+    } finally {
+      setRegenIdx(null)
+    }
+  }
+
+  function salvar(idx: number) {
+    if (!batch?.[idx]) return
+    const post = batch[idx]
+    onSave({
       id: Date.now().toString(),
-      conteudo: output.conteudo + '\n\n' + output.hashtags.join(' '),
-      tipo,
+      conteudo: post.conteudo + '\n\n' + post.hashtags.join(' '),
+      tipo: post.tipo,
       status: 'rascunho',
       semana: weekLabel(0),
       data: new Date().toISOString(),
-    }
-    onSave(post)
+    })
+    setSavedSet(prev => new Set([...prev, idx]))
     showToast('✓ Post salvo no calendário!')
   }
 
-  function copiar() {
-    if (!output) return
-    const text = output.conteudo + '\n\n' + output.hashtags.join(' ')
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    })
+  function copiar(idx: number) {
+    if (!batch?.[idx]) return
+    const post = batch[idx]
+    navigator.clipboard.writeText(post.conteudo + '\n\n' + post.hashtags.join(' '))
+    setCopiedIdx(idx)
+    setTimeout(() => setCopiedIdx(null), 2000)
   }
 
-  function limpar() {
-    setContexto('')
-    setOutput(null)
-    setTipo('dica')
-    setItem<Draft>(DRAFT_KEY, { tipo: 'dica', contexto: '', output: null })
-  }
-
-  const tipoObj = TIPOS.find(t => t.id === tipo)!
+  const refCount   = getItem<RefPostLinkedIn[]>('liRefs', []).length
+  const hasContext = !!(getItem<SaasContext>('linkedinConfig', { produto: '', descricao: '', icp: '', diferenciais: '', casos: '', extras: '' }).produto)
 
   return (
     <div>
-      <h2>Gerar Post LinkedIn</h2>
-      <p className="c-subtitle">Escolha o tipo, descreva o tópico e receba um post pronto para publicar</p>
+      <h2>Gerar Posts LinkedIn</h2>
+      <p className="c-subtitle">
+        3 posts por semana — a IA escolhe os tipos, usa suas referências e o contexto do SaaS
+      </p>
 
-      <div className="c-card">
-        <div>
-          <label className="c-label">Tipo de post</label>
-          <div className="c-li-tipo-grid">
-            {TIPOS.map(t => (
-              <button
-                key={t.id}
-                className={`c-li-tipo-card${tipo === t.id ? ' active' : ''}`}
-                onClick={() => setTipo(t.id)}
-              >
-                <span className="c-li-tipo-emoji">{t.emoji}</span>
-                <span className="c-li-tipo-name">{t.label}</span>
-                <span className="c-li-tipo-desc">{t.desc}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <label className="c-label">Tópico / contexto — fale ou escreva</label>
-          <div className="c-field-wrap">
-            <textarea
-              className="c-textarea tall"
-              value={contexto}
-              onChange={e => setContexto(e.target.value)}
-              placeholder={
-                tipo === 'noticia'      ? 'Qual notícia ou tendência você quer comentar? Ex: nova política de privacidade do WhatsApp...' :
-                tipo === 'produto'      ? 'Qual feature ou caso de uso mostrar? Ex: agendamento de follow-up de 30 dias em 2 cliques...' :
-                tipo === 'prova_social' ? 'Qual resultado de cliente ou dado real tem? Ex: cliente reduziu no-show em 60% com lembrete automático...' :
-                tipo === 'dica'         ? 'Qual dica prática para o ICP? Ex: 3 mensagens de WhatsApp pós-venda que aumentam recompra...' :
-                tipo === 'personal'     ? 'O que aconteceu na sua jornada essa semana? Erro, decisão, aprendizado...' :
-                'O que o vídeo vai mostrar? Ex: como configurar uma sequência de e-mail de pós-venda em 5 minutos...'
-              }
-            />
-            <button
-              className={`c-mic-btn${recording ? ' recording' : ''}`}
-              onClick={toggleMic}
-              title="Gravar voz"
-            >
-              🎤
-            </button>
-          </div>
-          {recording && <div className="c-mic-status active">● Gravando... fale agora</div>}
-        </div>
-
-        <div className="c-row">
-          <button className="c-btn" onClick={gerar} disabled={loading}>
-            ⚡ Gerar post
-          </button>
-          <button className="c-btn-ghost" onClick={limpar}>Limpar</button>
-        </div>
-      </div>
-
-      {loading && (
-        <div className="c-loading visible">
-          <div className="c-spinner" />
-          Criando post com IA...
+      {/* Context hints */}
+      {(!hasContext || refCount === 0) && (
+        <div className="c-li-gen-hints">
+          {!hasContext && (
+            <div className="c-li-gen-hint warn">
+              ⚠ Configure o contexto do SaaS na aba <strong>Config</strong> para posts mais precisos
+            </div>
+          )}
+          {refCount === 0 && (
+            <div className="c-li-gen-hint info">
+              💡 Adicione referências na aba <strong>Referências</strong> para melhorar o estilo dos posts
+            </div>
+          )}
         </div>
       )}
 
-      {output && (
-        <div className="c-output-box">
-          <div className="c-out-section">
-            <h4 className="c-out-label">
-              {tipoObj.emoji} {tipoObj.label} — preview do post
-            </h4>
-            <div className="c-li-post-preview">
-              {output.conteudo.split('\n').map((line, i) => (
-                line ? <p key={i}>{line}</p> : <br key={i} />
-              ))}
-              <div className="c-li-post-hashtags">
-                {output.hashtags.map(h => <span key={h}>{h}</span>)}
-              </div>
-            </div>
-            <div className="c-li-chars">
-              {(output.conteudo + '\n\n' + output.hashtags.join(' ')).length} caracteres
-            </div>
+      {/* Generate button */}
+      <div className="c-row" style={{ marginBottom: 24, alignItems: 'center' }}>
+        <button className="c-btn" onClick={gerarBatch} disabled={loading || regenIdx !== null}>
+          {loading
+            ? '⏳ Gerando…'
+            : batch
+              ? '↻ Gerar nova semana'
+              : '⚡ Gerar 3 posts desta semana'}
+        </button>
+        {batch && !loading && (
+          <span style={{ fontSize: 11, color: 'var(--c-muted)', fontFamily: 'var(--font-mono)', letterSpacing: '0.5px' }}>
+            {savedSet.size}/3 salvos · {refCount} ref{refCount !== 1 ? 's' : ''}
+          </span>
+        )}
+      </div>
+
+      {loading && (
+        <div className="c-loading visible" style={{ marginBottom: 24 }}>
+          <div className="c-spinner" />
+          Criando 3 posts — analisando referências, contexto do produto e estilo visual…
+        </div>
+      )}
+
+      {/* Post cards */}
+      {batch && !loading && (
+        <div className="c-li-batch-list">
+          {batch.map((post, idx) => (
+            <PostCard
+              key={`${idx}-${post.conteudo.slice(0, 20)}`}
+              idx={idx}
+              post={post}
+              saved={savedSet.has(idx)}
+              copied={copiedIdx === idx}
+              regenLoading={regenIdx === idx}
+              adjustText={adjustTexts[idx]}
+              onAdjustChange={v => setAdjustTexts(prev => { const n = [...prev]; n[idx] = v; return n })}
+              onSave={() => salvar(idx)}
+              onCopy={() => copiar(idx)}
+              onRegen={(inst) => handleRegen(idx, inst)}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Empty state */}
+      {!batch && !loading && (
+        <div className="c-card" style={{ textAlign: 'center', padding: 52, color: 'var(--c-muted)' }}>
+          <div style={{ fontSize: 40, marginBottom: 14 }}>⚡</div>
+          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--c-text)', marginBottom: 8 }}>
+            Pronto para gerar sua semana de conteúdo
           </div>
-
-          {output.dica_visual && (
-            <div className="c-out-section">
-              <h4 className="c-out-label">Sugestão visual</h4>
-              <div className="c-out-text">{output.dica_visual}</div>
-            </div>
-          )}
-
-          <div className="c-row">
-            <button className="c-btn" onClick={salvarCalendario}>
-              📅 Salvar no calendário
-            </button>
-            <button className="c-btn-ghost" onClick={copiar}>
-              {copied ? '✓ Copiado!' : '📋 Copiar post'}
-            </button>
-            <button className="c-btn-ghost" onClick={gerar}>
-              ↻ Gerar novamente
-            </button>
-          </div>
-
-          <div className="c-refine-box" style={{ marginTop: 12 }}>
-            <label className="c-label" style={{ color: 'var(--c-accent3)' }}>
-              Ajustes — fale ou escreva o que quer mudar
-            </label>
-            <AjustePost output={output} contexto={contexto} tipo={tipo} onResult={setOutput} />
+          <div style={{ fontSize: 13, maxWidth: 420, margin: '0 auto', lineHeight: 1.7 }}>
+            A IA cria 3 posts variados com base no seu SaaS, ICP e referências salvas.
+            Nenhum input necessário — só clicar.
           </div>
         </div>
       )}
@@ -304,94 +342,110 @@ Responda SOMENTE com JSON puro. Sem texto antes, sem texto depois:
   )
 }
 
-function AjustePost({
-  output, contexto, tipo, onResult,
+// ── Post card ─────────────────────────────────────────────────────────────────
+function PostCard({
+  idx, post, saved, copied, regenLoading, adjustText, onAdjustChange, onSave, onCopy, onRegen,
 }: {
-  output: GeneratedPost
-  contexto: string
-  tipo: PostTipo
-  onResult: (g: GeneratedPost) => void
+  idx: number
+  post: GeneratedPost
+  saved: boolean
+  copied: boolean
+  regenLoading: boolean
+  adjustText: string
+  onAdjustChange: (v: string) => void
+  onSave: () => void
+  onCopy: () => void
+  onRegen: (instructions?: string) => void
 }) {
-  const { showToast } = useToast()
-  const [ajuste, setAjuste] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [recording, setRecording] = useState(false)
-  const recRef = useRef<SpeechRec | null>(null)
-
-  const toggleMic = useCallback(() => {
-    type SRWindow = Window & { SpeechRecognition?: SpeechRecCtor; webkitSpeechRecognition?: SpeechRecCtor }
-    const SR = (window as SRWindow).SpeechRecognition || (window as SRWindow).webkitSpeechRecognition
-    if (!SR) { showToast('Use Chrome para gravação de voz'); return }
-    if (recording) { recRef.current?.stop(); setRecording(false); return }
-    const rec = new SR()
-    rec.lang = 'pt-BR'; rec.continuous = true; rec.interimResults = true
-    recRef.current = rec; setRecording(true)
-    let final = ajuste
-    rec.onresult = (e: SpeechRecEvent) => {
-      let interim = ''
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        if (e.results[i].isFinal) final += e.results[i][0].transcript + ' '
-        else interim = e.results[i][0].transcript
-      }
-      setAjuste(final + interim)
-    }
-    const stop = () => setRecording(false)
-    rec.onerror = stop; rec.onend = stop; rec.start()
-  }, [recording, ajuste, showToast])
-
-  async function refinar() {
-    if (!ajuste.trim()) { showToast('Descreva os ajustes desejados.'); return }
-    setLoading(true)
-    try {
-      const saas = getItem<SaasContext>('linkedinConfig', { produto: '', descricao: '', icp: '', diferenciais: '', casos: '', extras: '' })
-      const prompt = `Você criou o seguinte post LinkedIn:
-
-${JSON.stringify(output, null, 2)}
-
-O criador quer os seguintes ajustes:
-${ajuste}
-
-Produto de referência: ${saas.produto || 'SaaS de CRM / relacionamento com cliente'}
-ICP: ${saas.icp || 'empresários e gestores comerciais'}
-
-Mantenha o que está bom, aplique os ajustes. Máximo 1200 caracteres.
-Responda SOMENTE com JSON puro:
-{"conteudo":"post completo com \\n para quebras","hashtags":["#tag1","#tag2","#tag3"],"dica_visual":"sugestão visual"}`
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1500, messages: [{ role: 'user', content: prompt }] }),
-      })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const data = await res.json()
-      if (data.error) throw new Error(data.error.message)
-      const text = (data.content || []).map((i: { text?: string }) => i.text || '').join('').trim()
-      const match = text.match(/\{[\s\S]*\}/)
-      if (!match) throw new Error('Resposta inválida da IA')
-      onResult(JSON.parse(match[0]))
-      setAjuste('')
-    } catch (err) {
-      showToast('Erro ao refinar: ' + (err instanceof Error ? err.message : String(err)))
-    } finally {
-      setLoading(false)
-    }
-  }
+  const [showAdjust, setShowAdjust] = useState(false)
 
   return (
-    <div>
-      <div className="c-field-wrap">
-        <textarea
-          className="c-textarea short"
-          value={ajuste}
-          onChange={e => setAjuste(e.target.value)}
-          placeholder="Ex: hook mais direto, adicionar dado numérico, tom mais leve..."
-        />
-        <button className={`c-mic-btn${recording ? ' recording' : ''}`} onClick={toggleMic} title="Gravar voz">🎤</button>
+    <div className={`c-li-batch-card${saved ? ' saved' : ''}${regenLoading ? ' loading' : ''}`}>
+      {/* Header row */}
+      <div className="c-li-batch-header">
+        <div className="c-li-batch-meta">
+          <span className="c-li-batch-num">{String(idx + 1).padStart(2, '0')}</span>
+          <span className={`c-li-tipo-tag ${TIPO_COLOR[post.tipo]}`}>{TIPO_LABEL[post.tipo]}</span>
+          {saved && <span className="c-li-batch-saved-tag">✓ salvo</span>}
+        </div>
+        <div className="c-li-batch-actions">
+          <button
+            className="c-li-batch-icon-btn"
+            onClick={() => onRegen()}
+            disabled={regenLoading}
+            title="Regenerar este post"
+          >
+            {regenLoading ? '⏳' : '↻'}
+          </button>
+          <button
+            className="c-btn-ghost"
+            style={{ fontSize: 12, padding: '6px 12px' }}
+            onClick={onCopy}
+          >
+            {copied ? '✓ Copiado!' : '📋 Copiar'}
+          </button>
+          <button
+            className="c-btn"
+            style={{ fontSize: 12, padding: '6px 16px' }}
+            onClick={onSave}
+            disabled={saved}
+          >
+            {saved ? '✓ Salvo' : '📅 Salvar'}
+          </button>
+        </div>
       </div>
-      {recording && <div className="c-mic-status active">● Gravando...</div>}
-      <button className="c-btn-refine" onClick={refinar} disabled={loading} style={{ marginTop: 12 }}>
-        ✦ Refinar com esses ajustes
-      </button>
+
+      {/* Post preview */}
+      <div className="c-li-post-preview" style={{ margin: '14px 0 6px' }}>
+        {post.conteudo.split('\n').map((line, i) =>
+          line ? <p key={i}>{line}</p> : <br key={i} />
+        )}
+        <div className="c-li-post-hashtags">
+          {post.hashtags.map(h => <span key={h}>{h}</span>)}
+        </div>
+      </div>
+      <div className="c-li-chars">
+        {(post.conteudo + '\n\n' + post.hashtags.join(' ')).length} caracteres
+      </div>
+
+      {/* Visual brief */}
+      {post.imagem_brief && (
+        <div className="c-li-visual-brief">
+          <span className="c-li-visual-label">🎨 Visual</span>
+          <span className="c-li-visual-text">{post.imagem_brief}</span>
+        </div>
+      )}
+
+      {/* Adjust section */}
+      <div className="c-li-batch-footer">
+        {!showAdjust ? (
+          <button className="c-li-batch-adjust-btn" onClick={() => setShowAdjust(true)}>
+            ✦ Ajustar este post
+          </button>
+        ) : (
+          <div className="c-li-batch-adjust-area">
+            <textarea
+              className="c-textarea short"
+              value={adjustText}
+              onChange={e => onAdjustChange(e.target.value)}
+              placeholder="Ex: hook mais direto, adicionar dado numérico, tom mais casual, mencionar o WhatsApp…"
+              autoFocus
+            />
+            <div className="c-row" style={{ marginTop: 8 }}>
+              <button
+                className="c-btn-refine"
+                onClick={() => { onRegen(adjustText); setShowAdjust(false) }}
+                disabled={regenLoading || !adjustText.trim()}
+              >
+                {regenLoading ? '⏳' : '✦ Aplicar ajustes'}
+              </button>
+              <button className="c-li-batch-adjust-btn" onClick={() => setShowAdjust(false)}>
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

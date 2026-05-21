@@ -1428,6 +1428,144 @@
 .c-li-quick-title { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
 .c-li-quick-desc  { font-size: 12px; color: var(--c-muted); }
 
+/* ===== LINKEDIN BATCH GENERATOR ===== */
+.c-li-gen-hints {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.c-li-gen-hint {
+  font-size: 12px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-family: var(--font-mono), 'DM Mono', monospace;
+}
+.c-li-gen-hint.warn { background: #1a1200; border: 1px solid #3a2800; color: #e0a030; }
+.c-li-gen-hint.info { background: #0d1520; border: 1px solid #1a3050; color: #5aadff; }
+.c-li-gen-hint strong { font-weight: 700; }
+
+/* Batch list */
+.c-li-batch-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.c-li-batch-card {
+  background: var(--c-bg2);
+  border: 1px solid var(--c-border);
+  border-left: 3px solid var(--c-border2);
+  border-radius: 8px;
+  padding: 18px 20px;
+  transition: border-color .2s;
+}
+.c-li-batch-card:hover { border-color: var(--c-border2); }
+.c-li-batch-card.saved {
+  border-left-color: var(--c-green);
+  background: rgba(93,187,99,.03);
+}
+.c-li-batch-card.loading { opacity: .55; pointer-events: none; }
+
+/* Card header */
+.c-li-batch-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.c-li-batch-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.c-li-batch-num {
+  font-family: var(--font-bebas), 'Bebas Neue', cursive;
+  font-size: 22px;
+  color: var(--c-muted2);
+  line-height: 1;
+}
+.c-li-batch-saved-tag {
+  font-family: var(--font-mono), 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--c-green);
+  background: var(--c-green-bg);
+  border: 1px solid var(--c-green-border);
+  border-radius: 3px;
+  padding: 2px 7px;
+  letter-spacing: 0.5px;
+}
+.c-li-batch-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.c-li-batch-icon-btn {
+  background: none;
+  border: 1px solid var(--c-border);
+  border-radius: 5px;
+  color: var(--c-muted);
+  font-size: 14px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all .15s;
+}
+.c-li-batch-icon-btn:hover:not(:disabled) { border-color: var(--c-accent); color: var(--c-accent); }
+.c-li-batch-icon-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+/* Visual brief */
+.c-li-visual-brief {
+  margin-top: 12px;
+  background: var(--c-bg3);
+  border: 1px solid var(--c-border);
+  border-left: 3px solid var(--c-accent3);
+  border-radius: 6px;
+  padding: 10px 14px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.c-li-visual-label {
+  font-family: var(--font-mono), 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--c-accent3);
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding-top: 1px;
+}
+.c-li-visual-text {
+  font-size: 12px;
+  color: #bbb;
+  line-height: 1.6;
+}
+
+/* Adjust section */
+.c-li-batch-footer {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--c-border);
+}
+.c-li-batch-adjust-btn {
+  background: none;
+  border: none;
+  color: var(--c-accent3);
+  font-family: var(--font-mono), 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.8px;
+  cursor: pointer;
+  padding: 0;
+  transition: opacity .15s;
+}
+.c-li-batch-adjust-btn:hover { opacity: .7; }
+.c-li-batch-adjust-area { animation: c-fade-in .15s ease; }
+
 /* ===== LINKEDIN CALENDAR (goal dots per week) ===== */
 .c-li-cal-goal {
   display: flex;
