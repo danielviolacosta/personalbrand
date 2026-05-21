@@ -76,6 +76,17 @@ export default function CalendarioLinkedIn({
   const totalPosts     = posts.length
   const totalPublished = posts.filter(p => p.status === 'publicado').length
 
+  // Current-week goal stats
+  const thisWeek          = useMemo(() => weekLabel(0), [])
+  const thisWeekPosts     = posts.filter(p => p.semana === thisWeek)
+  const thisWeekPublished = thisWeekPosts.filter(p => p.status === 'publicado').length
+  const thisWeekTotal     = thisWeekPosts.length
+  const weekGoalPct       = Math.min(100, Math.round((thisWeekPublished / META_SEMANAL) * 100))
+
+  // Next-week preview
+  const nextWeek      = useMemo(() => weekLabel(1), [])
+  const nextWeekTotal = posts.filter(p => p.semana === nextWeek).length
+
   // Parse hashtags from post content (they're appended at the end as "#tag1 #tag2 ...")
   function parseContent(conteudo: string) {
     const lines = conteudo.split('\n')
@@ -93,6 +104,55 @@ export default function CalendarioLinkedIn({
     <div>
       <h2>Calendário LinkedIn</h2>
       <p className="c-subtitle">Organize seus posts — meta de {META_SEMANAL}× por semana</p>
+
+      {/* Weekly goal card */}
+      <div className="c-card" style={{ marginBottom: 24 }}>
+        <div className="c-li-goal-header">
+          <span className="c-li-goal-title">Meta da semana · LinkedIn</span>
+          <span className="c-li-goal-count">
+            <span style={{ color: weekGoalPct >= 100 ? 'var(--c-green)' : 'var(--c-accent)' }}>
+              {thisWeekPublished}
+            </span>
+            <span style={{ color: 'var(--c-muted)' }}>/{META_SEMANAL} publicados</span>
+          </span>
+        </div>
+        <div className="c-li-goal-bar-bg">
+          <div
+            className="c-li-goal-bar-fill"
+            style={{
+              width: `${weekGoalPct}%`,
+              background: weekGoalPct >= 100 ? 'var(--c-green)' : 'var(--c-accent)',
+            }}
+          />
+        </div>
+        <div className="c-li-goal-dots">
+          {Array.from({ length: META_SEMANAL }).map((_, i) => (
+            <div
+              key={i}
+              className={`c-li-goal-dot${i < thisWeekPublished ? ' done' : i < thisWeekTotal ? ' draft' : ''}`}
+            />
+          ))}
+          <span className="c-li-goal-week">{thisWeek}</span>
+          {weekGoalPct >= 100 && (
+            <span className="c-li-goal-badge" style={{ marginLeft: 8, marginTop: 0 }}>
+              🏆 Meta batida!
+            </span>
+          )}
+        </div>
+        {thisWeekTotal === 0 && (
+          <div className="c-li-goal-hint">Nenhum post planejado para esta semana ainda</div>
+        )}
+        {thisWeekTotal > 0 && thisWeekTotal > thisWeekPublished && (
+          <div className="c-li-goal-hint">
+            {thisWeekTotal - thisWeekPublished} rascunho{thisWeekTotal - thisWeekPublished > 1 ? 's' : ''} aguardando publicação
+          </div>
+        )}
+        {nextWeekTotal > 0 && (
+          <div className="c-li-goal-hint" style={{ marginTop: 4 }}>
+            Próxima semana: {nextWeekTotal} post{nextWeekTotal > 1 ? 's' : ''} planejado{nextWeekTotal > 1 ? 's' : ''}
+          </div>
+        )}
+      </div>
 
       <div className="c-cal-summary">
         <span>{totalPosts} post{totalPosts !== 1 ? 's' : ''} no total</span>
