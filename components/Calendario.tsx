@@ -15,6 +15,11 @@ export default function Calendario({ pautas, onSave, onNav }: Props) {
     onSave(pautas.map(p => p.data === data ? { ...p, status: 'publicado' as const } : p))
   }
 
+  function deletarPauta(data: string) {
+    if (!confirm('Excluir esta pauta do calendário?')) return
+    onSave(pautas.filter(p => p.data !== data))
+  }
+
   const weeks = Array.from({ length: 8 }, (_, i) => i - 2).map(offset => ({
     offset,
     label: weekLabel(offset),
@@ -65,6 +70,13 @@ export default function Calendario({ pautas, onSave, onNav }: Props) {
                           marcar publicado
                         </button>
                       )}
+                      <button
+                        className="c-cal-delete-btn"
+                        onClick={() => deletarPauta(p.data)}
+                        title="Excluir pauta"
+                      >
+                        ×
+                      </button>
                     </div>
                   </div>
                 ))}

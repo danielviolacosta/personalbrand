@@ -763,6 +763,18 @@
   transition: background .15s;
 }
 .c-cal-pauta-badge.planned:hover { background: rgba(232, 255, 71, 0.1); }
+.c-cal-delete-btn {
+  margin-left: 6px;
+  background: none;
+  border: none;
+  color: var(--c-muted2);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+  transition: color .15s;
+}
+.c-cal-delete-btn:hover { color: #ff4444; }
 
 /* Trends */
 .c-trend-item {
