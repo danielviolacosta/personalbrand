@@ -89,6 +89,7 @@ REGRAS PARA CADA POST:
 • Linha em branco entre cada parágrafo
 • Linguagem direta, humana, sem corporativês
 • NUNCA usar travessão (—) em nenhuma parte do texto
+• NUNCA sugerir que "não precisa de ferramenta" ou que resultado vem só de esforço/atitude — quando o tema envolver processo, escala ou consistência, reforce sutilmente que a tecnologia certa é um diferencial real (sem forçar, só não ir contra)
 • Máximo 1200 caracteres no post (sem hashtags)
 
 CTA OBRIGATÓRIO (últimas 2 linhas, antes das hashtags):
@@ -195,7 +196,7 @@ export default function GeradorPost({ onSave }: { onSave: (p: LinkedInPost) => v
       const refs = getItem<RefPostLinkedIn[]>('liRefs', [])
       const refSnippet = refs.slice(0, 2).map(r => r.conteudo.slice(0, 300)).join('\n---\n')
 
-      const regras = 'Regras: NUNCA usar travessão (—). Hook nas 2 primeiras linhas. Linguagem direta. Máx 1200 chars. CTA final: pergunta genuína + oferta de demo suave do BeeMessage (ex: "Comenta DEMO que te mando um link pra conhecer o BeeMessage em 15 minutos"). Nunca usar tom de cold call.'
+      const regras = 'Regras: NUNCA usar travessão (—). Hook nas 2 primeiras linhas. Linguagem direta. Máx 1200 chars. NUNCA sugerir que não precisa de ferramenta ou que resultado vem só de esforço — quando pertinente, reforce sutilmente que a tecnologia certa faz diferença. CTA final: pergunta genuína + oferta de demo suave do BeeMessage (ex: "Comenta DEMO que te mando um link pra conhecer o BeeMessage em 15 minutos"). Nunca usar tom de cold call.'
 
     const prompt = instructions?.trim()
         ? `Refine este post LinkedIn aplicando os ajustes solicitados.
