@@ -24,8 +24,8 @@ const TIPO_COLOR: Record<PostTipo, string> = {
 }
 
 const EMPTY_FORM = { autor: '', conteudo: '', tipo: 'dica' as PostTipo, engajamento: '', nota: '', imagem: '' }
+type FormState = typeof EMPTY_FORM
 
-// Compress image to JPEG ≤ 900px wide, quality 0.75
 function compressImage(dataUrl: string, maxWidth = 900, quality = 0.75): Promise<string> {
   return new Promise(resolve => {
     const img = new window.Image()
@@ -42,34 +42,39 @@ function compressImage(dataUrl: string, maxWidth = 900, quality = 0.75): Promise
   })
 }
 
-export default function RefsLinkedIn() {
+// ── Reusable ref form (used for both add and edit) ────────────────────────────
+function RefForm({
+  form,
+  setForm,
+  onSave,
+  onCancel,
+  saveLabel = 'Salvar referência',
+  isActive,        // whether paste listener should be active
+}: {
+  form: FormState
+  setForm: (fn: (f: FormState) => FormState) => void
+  onSave: () => void
+  onCancel: () => void
+  saveLabel?: string
+  isActive: boolean
+}) {
   const { showToast } = useToast()
   const fileRef = useRef<HTMLInputElement>(null)
-  const [refs, setRefs] = useState<RefPostLinkedIn[]>([])
-  const [form, setForm] = useState(EMPTY_FORM)
-  const [adding, setAdding] = useState(false)
   const [urlInput, setUrlInput] = useState('')
   const [fetchingUrl, setFetchingUrl] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
-  const [expandedImg, setExpandedImg] = useState<string | null>(null)
 
+  // Global paste listener
   useEffect(() => {
-    setRefs(getItem<RefPostLinkedIn[]>('liRefs', []))
-  }, [])
-
-  // ── Global paste listener (active only when form is open) ─────────────────
-  useEffect(() => {
-    if (!adding) return
+    if (!isActive) return
     async function onPaste(e: ClipboardEvent) {
-      const items = Array.from(e.clipboardData?.items ?? [])
-      const imgItem = items.find(i => i.type.startsWith('image/'))
+      const imgItem = Array.from(e.clipboardData?.items ?? []).find(i => i.type.startsWith('image/'))
       if (!imgItem) return
       const file = imgItem.getAsFile()
       if (!file) return
       const reader = new FileReader()
       reader.onload = async ev => {
-        const raw = ev.target?.result as string
-        const compressed = await compressImage(raw)
+        const compressed = await compressImage(ev.target?.result as string)
         setForm(f => ({ ...f, imagem: compressed }))
         showToast('✓ Print colado!')
       }
@@ -77,30 +82,14 @@ export default function RefsLinkedIn() {
     }
     document.addEventListener('paste', onPaste)
     return () => document.removeEventListener('paste', onPaste)
-  }, [adding, showToast])
+  }, [isActive, setForm, showToast])
 
-  function save(next: RefPostLinkedIn[]) { setRefs(next); setItem('liRefs', next) }
-
-  function adicionar() {
-    if (!form.conteudo.trim()) { showToast('Cole o texto do post primeiro.'); return }
-    save([{ ...form, id: Date.now().toString() }, ...refs])
-    setForm(EMPTY_FORM); setUrlInput(''); setAdding(false)
-    showToast('✓ Referência adicionada!')
-  }
-
-  function deletar(id: string) {
-    if (!confirm('Remover esta referência?')) return
-    save(refs.filter(r => r.id !== id))
-  }
-
-  // ── File input (click-to-upload alternative) ──────────────────────────────
   function handleFileInput(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
     reader.onload = async ev => {
-      const raw = ev.target?.result as string
-      const compressed = await compressImage(raw)
+      const compressed = await compressImage(ev.target?.result as string)
       setForm(f => ({ ...f, imagem: compressed }))
       showToast('✓ Imagem carregada!')
     }
@@ -108,7 +97,6 @@ export default function RefsLinkedIn() {
     e.target.value = ''
   }
 
-  // ── URL fetch ─────────────────────────────────────────────────────────────
   async function buscarUrl() {
     const url = urlInput.trim()
     if (!url) return
@@ -128,14 +116,13 @@ export default function RefsLinkedIn() {
     } finally { setFetchingUrl(false) }
   }
 
-  // ── AI analysis ───────────────────────────────────────────────────────────
   async function analisarComIA() {
     if (!form.conteudo.trim()) { showToast('Cole o texto do post primeiro.'); return }
     setAnalyzing(true)
     try {
-      const prompt = `Você é especialista em LinkedIn B2B. Analise o post abaixo e responda SOMENTE com JSON puro (sem texto antes ou depois):
+      const prompt = `Você é especialista em LinkedIn B2B. Analise o post abaixo e responda SOMENTE com JSON puro:
 
-{"tipo":"dica","autor":"nome do autor se identificável ou string vazia","nota":"1-2 linhas diretas explicando por que este post funciona (hook, estrutura, dado, emoção, CTA etc.)"}
+{"tipo":"dica","autor":"nome do autor se identificável ou string vazia","nota":"1-2 linhas explicando por que este post funciona"}
 
 Tipos: noticia, produto, prova_social, dica, personal, video_demo
 
@@ -159,7 +146,7 @@ ${form.conteudo.slice(0, 2000)}`
         autor: result.autor?.trim() || f.autor,
         nota:  result.nota?.trim()  || f.nota,
       }))
-      showToast('✓ Análise pronta — revise e salve!')
+      showToast('✓ Análise pronta!')
     } catch (err) {
       showToast('Erro ao analisar: ' + (err instanceof Error ? err.message : 'Erro'))
     } finally { setAnalyzing(false) }
@@ -169,142 +156,195 @@ ${form.conteudo.slice(0, 2000)}`
 
   return (
     <div>
+      {/* Print */}
+      <div>
+        <label className="c-label" style={{ marginTop: 0 }}>
+          Print do post — Cmd+V em qualquer lugar da página
+        </label>
+        {form.imagem ? (
+          <div className="c-li-ref-img-zone has-image">
+            <img src={form.imagem} className="c-li-ref-img-preview" alt="Print colado" />
+            <button className="c-li-ref-img-remove" onClick={() => setForm(f => ({ ...f, imagem: '' }))} title="Remover">×</button>
+          </div>
+        ) : (
+          <div
+            className="c-li-ref-img-zone"
+            onClick={() => fileRef.current?.click()}
+            role="button" tabIndex={0}
+            onKeyDown={e => e.key === 'Enter' && fileRef.current?.click()}
+          >
+            <div className="c-li-ref-img-placeholder">
+              <span>📸</span>
+              <span>Cmd+V para colar print · ou clique para carregar arquivo</span>
+            </div>
+          </div>
+        )}
+        <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileInput} />
+      </div>
+
+      {/* URL */}
+      <label className="c-label">Buscar por URL</label>
+      <div className="c-li-ref-url-row">
+        <input
+          className="c-input"
+          value={urlInput}
+          onChange={e => setUrlInput(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && !fetchingUrl && buscarUrl()}
+          placeholder="https://linkedin.com/posts/... ou qualquer artigo público"
+        />
+        <button className="c-btn-ghost" onClick={buscarUrl} disabled={fetchingUrl || !urlInput.trim()}>
+          {fetchingUrl ? '⏳' : '🔗 Buscar'}
+        </button>
+      </div>
+      <div className="c-li-ref-url-hint">
+        Funciona para artigos e blogs. Posts LinkedIn: cole o texto manualmente se der erro.
+      </div>
+
+      <div className="c-li-ref-divider"><span>ou cole o texto diretamente</span></div>
+
+      {/* Conteúdo */}
+      <div>
+        <label className="c-label">Texto completo do post</label>
+        <textarea
+          className="c-textarea tall"
+          value={form.conteudo}
+          onChange={e => setForm(f => ({ ...f, conteudo: e.target.value }))}
+          placeholder="Cole o post aqui…"
+        />
+      </div>
+
+      {canAnalyze && (
+        <div style={{ marginTop: 10 }}>
+          <button className="c-btn-refine c-btn-analyze" onClick={analisarComIA} disabled={analyzing}>
+            {analyzing ? '⏳ Analisando…' : '✦ Analisar com IA — preenche tipo e "por que funcionou"'}
+          </button>
+        </div>
+      )}
+
+      {/* Autor */}
+      <div>
+        <label className="c-label">Autor / perfil</label>
+        <input
+          className="c-input"
+          value={form.autor}
+          onChange={e => setForm(f => ({ ...f, autor: e.target.value }))}
+          placeholder="Ex: @pedroserrano, Thiago Nigro…"
+        />
+      </div>
+
+      {/* Tipo */}
+      <div>
+        <label className="c-label">Tipo de post</label>
+        <div className="c-row" style={{ gap: 8, flexWrap: 'wrap', marginTop: 6 }}>
+          {TIPOS.map(t => (
+            <button
+              key={t.id}
+              className={`c-li-tipo-btn${form.tipo === t.id ? ' active' : ''}`}
+              onClick={() => setForm(f => ({ ...f, tipo: t.id }))}
+            >{t.label}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Engajamento */}
+      <div>
+        <label className="c-label">Engajamento (opcional)</label>
+        <input
+          className="c-input"
+          value={form.engajamento}
+          onChange={e => setForm(f => ({ ...f, engajamento: e.target.value }))}
+          placeholder="Ex: 2.3k reações, 180 comentários"
+        />
+      </div>
+
+      {/* Nota */}
+      <div>
+        <label className="c-label">Por que funcionou</label>
+        <textarea
+          className="c-textarea short"
+          value={form.nota}
+          onChange={e => setForm(f => ({ ...f, nota: e.target.value }))}
+          placeholder="Ex: hook direto com número, contraintuitivo, prova social com dado específico…"
+        />
+      </div>
+
+      <div className="c-row" style={{ marginTop: 16 }}>
+        <button className="c-btn" onClick={onSave}>{saveLabel}</button>
+        <button className="c-btn-ghost" onClick={onCancel}>Cancelar</button>
+      </div>
+    </div>
+  )
+}
+
+// ── Main component ─────────────────────────────────────────────────────────────
+export default function RefsLinkedIn() {
+  const { showToast } = useToast()
+  const [refs, setRefs] = useState<RefPostLinkedIn[]>([])
+  const [addForm, setAddForm] = useState(EMPTY_FORM)
+  const [adding, setAdding] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editForm, setEditForm] = useState(EMPTY_FORM)
+  const [expandedImg, setExpandedImg] = useState<string | null>(null)
+
+  useEffect(() => {
+    setRefs(getItem<RefPostLinkedIn[]>('liRefs', []))
+  }, [])
+
+  function save(next: RefPostLinkedIn[]) { setRefs(next); setItem('liRefs', next) }
+
+  function adicionar() {
+    if (!addForm.conteudo.trim()) { showToast('Cole o texto do post primeiro.'); return }
+    save([{ ...addForm, id: Date.now().toString() }, ...refs])
+    setAddForm(EMPTY_FORM); setAdding(false)
+    showToast('✓ Referência adicionada!')
+  }
+
+  function startEdit(r: RefPostLinkedIn) {
+    // Close add form if open
+    setAdding(false)
+    setEditingId(r.id)
+    setEditForm({ autor: r.autor, conteudo: r.conteudo, tipo: r.tipo, engajamento: r.engajamento, nota: r.nota, imagem: r.imagem ?? '' })
+  }
+
+  function salvarEdicao() {
+    if (!editForm.conteudo.trim()) { showToast('O texto do post não pode estar vazio.'); return }
+    save(refs.map(r => r.id === editingId ? { ...r, ...editForm } : r))
+    setEditingId(null)
+    showToast('✓ Referência atualizada!')
+  }
+
+  function cancelarEdicao() { setEditingId(null) }
+
+  function deletar(id: string) {
+    if (!confirm('Remover esta referência?')) return
+    save(refs.filter(r => r.id !== id))
+    if (editingId === id) setEditingId(null)
+  }
+
+  return (
+    <div>
       <h2>Referências LinkedIn</h2>
       <p className="c-subtitle">
         Posts que funcionaram — usados como base de estilo na geração de conteúdo
       </p>
 
       <div className="c-row" style={{ marginBottom: 16 }}>
-        <button className="c-btn" onClick={() => { setAdding(v => !v); setUrlInput('') }}>
+        <button className="c-btn" onClick={() => { setAdding(v => !v); setEditingId(null) }}>
           {adding ? '✕ Cancelar' : '+ Adicionar referência'}
         </button>
       </div>
 
+      {/* ── Add form ── */}
       {adding && (
         <div className="c-card" style={{ marginBottom: 20 }}>
-
-          {/* ── Print / imagem ── */}
-          <div>
-            <label className="c-label" style={{ marginTop: 0 }}>
-              Print do post — Cmd+V em qualquer lugar da página
-            </label>
-            {form.imagem ? (
-              <div className="c-li-ref-img-zone has-image">
-                <img src={form.imagem} className="c-li-ref-img-preview" alt="Print colado" />
-                <button
-                  className="c-li-ref-img-remove"
-                  onClick={() => setForm(f => ({ ...f, imagem: '' }))}
-                  title="Remover imagem"
-                >×</button>
-              </div>
-            ) : (
-              <div
-                className="c-li-ref-img-zone"
-                onClick={() => fileRef.current?.click()}
-                role="button"
-                tabIndex={0}
-                onKeyDown={e => e.key === 'Enter' && fileRef.current?.click()}
-              >
-                <div className="c-li-ref-img-placeholder">
-                  <span>📸</span>
-                  <span>Cmd+V para colar print · ou clique para carregar arquivo</span>
-                </div>
-              </div>
-            )}
-            <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileInput} />
-          </div>
-
-          {/* ── URL fetch ── */}
-          <label className="c-label">Buscar por URL</label>
-          <div className="c-li-ref-url-row">
-            <input
-              className="c-input"
-              value={urlInput}
-              onChange={e => setUrlInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && !fetchingUrl && buscarUrl()}
-              placeholder="https://linkedin.com/posts/... ou qualquer artigo público"
-            />
-            <button className="c-btn-ghost" onClick={buscarUrl} disabled={fetchingUrl || !urlInput.trim()}>
-              {fetchingUrl ? '⏳' : '🔗 Buscar'}
-            </button>
-          </div>
-          <div className="c-li-ref-url-hint">
-            Funciona para artigos e blogs. Posts LinkedIn: cole o texto manualmente se der erro.
-          </div>
-
-          <div className="c-li-ref-divider"><span>ou cole o texto diretamente</span></div>
-
-          {/* ── Conteúdo ── */}
-          <div>
-            <label className="c-label">Texto completo do post</label>
-            <textarea
-              className="c-textarea tall"
-              value={form.conteudo}
-              onChange={e => setForm(f => ({ ...f, conteudo: e.target.value }))}
-              placeholder="Cole o post aqui…"
-            />
-          </div>
-
-          {/* ── Analisar com IA ── */}
-          {canAnalyze && (
-            <div style={{ marginTop: 10 }}>
-              <button className="c-btn-refine c-btn-analyze" onClick={analisarComIA} disabled={analyzing}>
-                {analyzing ? '⏳ Analisando…' : '✦ Analisar com IA — preenche tipo e "por que funcionou" automaticamente'}
-              </button>
-            </div>
-          )}
-
-          {/* ── Autor ── */}
-          <div>
-            <label className="c-label">Autor / perfil</label>
-            <input
-              className="c-input"
-              value={form.autor}
-              onChange={e => setForm(f => ({ ...f, autor: e.target.value }))}
-              placeholder="Ex: @pedroserrano, Thiago Nigro…"
-            />
-          </div>
-
-          {/* ── Tipo ── */}
-          <div>
-            <label className="c-label">Tipo de post</label>
-            <div className="c-row" style={{ gap: 8, flexWrap: 'wrap', marginTop: 6 }}>
-              {TIPOS.map(t => (
-                <button
-                  key={t.id}
-                  className={`c-li-tipo-btn${form.tipo === t.id ? ' active' : ''}`}
-                  onClick={() => setForm(f => ({ ...f, tipo: t.id }))}
-                >{t.label}</button>
-              ))}
-            </div>
-          </div>
-
-          {/* ── Engajamento ── */}
-          <div>
-            <label className="c-label">Engajamento (opcional)</label>
-            <input
-              className="c-input"
-              value={form.engajamento}
-              onChange={e => setForm(f => ({ ...f, engajamento: e.target.value }))}
-              placeholder="Ex: 2.3k reações, 180 comentários"
-            />
-          </div>
-
-          {/* ── Por que funcionou ── */}
-          <div>
-            <label className="c-label">Por que funcionou</label>
-            <textarea
-              className="c-textarea short"
-              value={form.nota}
-              onChange={e => setForm(f => ({ ...f, nota: e.target.value }))}
-              placeholder="Ex: hook direto com número, contraintuitivo, prova social com dado específico…"
-            />
-          </div>
-
-          <div className="c-row" style={{ marginTop: 16 }}>
-            <button className="c-btn" onClick={adicionar}>Salvar referência</button>
-            <button className="c-btn-ghost" onClick={() => { setForm(EMPTY_FORM); setUrlInput('') }}>Limpar</button>
-          </div>
+          <RefForm
+            form={addForm}
+            setForm={setAddForm}
+            onSave={adicionar}
+            onCancel={() => { setAdding(false); setAddForm(EMPTY_FORM) }}
+            saveLabel="Salvar referência"
+            isActive={adding}
+          />
         </div>
       )}
 
@@ -316,24 +356,45 @@ ${form.conteudo.slice(0, 2000)}`
         </div>
       )}
 
+      {/* ── Ref list ── */}
       <div className="c-li-ref-list">
         {refs.map(r => (
           <div key={r.id} className="c-li-ref-card">
-            {r.imagem && (
-              <div className="c-li-ref-img-thumb" onClick={() => setExpandedImg(r.imagem!)} title="Ampliar">
-                <img src={r.imagem} alt="Print do post" />
-              </div>
+            {editingId === r.id ? (
+              /* ── Edit mode ── */
+              <RefForm
+                form={editForm}
+                setForm={setEditForm}
+                onSave={salvarEdicao}
+                onCancel={cancelarEdicao}
+                saveLabel="✓ Salvar alterações"
+                isActive={editingId === r.id}
+              />
+            ) : (
+              /* ── View mode ── */
+              <>
+                {r.imagem && (
+                  <div className="c-li-ref-img-thumb" onClick={() => setExpandedImg(r.imagem!)} title="Ampliar">
+                    <img src={r.imagem} alt="Print do post" />
+                  </div>
+                )}
+                <div className="c-li-ref-header">
+                  <span className={`c-li-tipo-tag ${TIPO_COLOR[r.tipo]}`}>
+                    {TIPOS.find(t => t.id === r.tipo)?.label}
+                  </span>
+                  {r.autor && <span className="c-li-ref-autor">@{r.autor.replace('@', '')}</span>}
+                  {r.engajamento && <span className="c-li-ref-eng">{r.engajamento}</span>}
+                  <button
+                    className="c-li-ref-edit-btn"
+                    onClick={() => startEdit(r)}
+                    title="Editar referência"
+                  >✏️</button>
+                  <button className="c-cal-delete-btn" onClick={() => deletar(r.id)} title="Remover">×</button>
+                </div>
+                <div className="c-li-ref-conteudo">{r.conteudo}</div>
+                {r.nota && <div className="c-li-ref-nota">→ {r.nota}</div>}
+              </>
             )}
-            <div className="c-li-ref-header">
-              <span className={`c-li-tipo-tag ${TIPO_COLOR[r.tipo]}`}>
-                {TIPOS.find(t => t.id === r.tipo)?.label}
-              </span>
-              {r.autor && <span className="c-li-ref-autor">@{r.autor.replace('@', '')}</span>}
-              {r.engajamento && <span className="c-li-ref-eng">{r.engajamento}</span>}
-              <button className="c-cal-delete-btn" onClick={() => deletar(r.id)} title="Remover">×</button>
-            </div>
-            <div className="c-li-ref-conteudo">{r.conteudo}</div>
-            {r.nota && <div className="c-li-ref-nota">→ {r.nota}</div>}
           </div>
         ))}
       </div>
