@@ -85,9 +85,10 @@ POSTS A GERAR (nesta ordem exata):
 3. Tipo: ${tipos[2]} — ${TIPO_GUIDE[tipos[2]]}
 
 REGRAS PARA CADA POST:
-• Hook nas primeiras 2 linhas — sem ponto final (força "ver mais")
+• Hook nas primeiras 2 linhas (sem ponto final, força "ver mais")
 • Linha em branco entre cada parágrafo
 • Linguagem direta, humana, sem corporativês
+• NUNCA usar travessão (—) em nenhuma parte do texto
 • CTA específico na última linha (pergunta, convite ou ação)
 • 3 a 5 hashtags ao final
 • Máximo 1200 caracteres no post (sem hashtags)
@@ -188,7 +189,9 @@ export default function GeradorPost({ onSave }: { onSave: (p: LinkedInPost) => v
       const refs = getItem<RefPostLinkedIn[]>('liRefs', [])
       const refSnippet = refs.slice(0, 2).map(r => r.conteudo.slice(0, 300)).join('\n---\n')
 
-      const prompt = instructions?.trim()
+      const regras = 'Regras: NUNCA usar travessão (—). Hook nas 2 primeiras linhas. Linguagem direta. CTA. Máx 1200 chars.'
+
+    const prompt = instructions?.trim()
         ? `Refine este post LinkedIn aplicando os ajustes solicitados.
 
 POST ATUAL:
@@ -198,12 +201,12 @@ Hashtags: ${post.hashtags.join(' ')}
 AJUSTES: ${instructions}
 
 Produto: ${saas.produto || 'SaaS de CRM'} | ICP: ${saas.icp || 'gestores comerciais'}
-Mantenha o tipo "${post.tipo}". Máx 1200 chars.`
+Mantenha o tipo "${post.tipo}". ${regras}`
         : `Gere uma nova versão do post LinkedIn tipo "${post.tipo}".
 ${TIPO_GUIDE[post.tipo]}
 Produto: ${saas.produto || 'SaaS de CRM'} | ICP: ${saas.icp || 'gestores comerciais'}
 ${refSnippet ? `Referência de estilo:\n${refSnippet}` : ''}
-Hook forte, linguagem direta, CTA. Máx 1200 chars.`
+${regras}`
 
       const res = await fetch('/api/chat', {
         method: 'POST',
