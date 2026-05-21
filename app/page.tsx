@@ -43,7 +43,20 @@ export default function Home() {
   useEffect(() => {
     setPautas(getItem('pautas', []))
     setLiPosts(getItem('liPosts', []))
+    // Restore last active platform + section
+    const savedPlatform = getItem<Platform>('nav_platform', 'youtube')
+    const savedSection  = getItem<Section>('nav_section', 'dashboard')
+    const savedLiSection = getItem<LISection>('nav_liSection', 'li-dashboard')
+    setPlatform(savedPlatform)
+    setSection(savedSection)
+    setLiSection(savedLiSection)
   }, [])
+
+  function navigate(p: Platform, s?: Section, ls?: LISection) {
+    setPlatform(p);  setItem('nav_platform', p)
+    if (s)  { setSection(s);   setItem('nav_section',   s) }
+    if (ls) { setLiSection(ls); setItem('nav_liSection', ls) }
+  }
 
   const savePautas = useCallback((next: Pauta[]) => {
     setPautas(next)
@@ -72,14 +85,14 @@ export default function Home() {
           <div className="c-platform-switch">
             <button
               className={`c-platform-btn${platform === 'youtube' ? ' active yt' : ''}`}
-              onClick={() => setPlatform('youtube')}
+              onClick={() => navigate('youtube')}
             >
               <span className="c-platform-icon">▶</span>
               YouTube
             </button>
             <button
               className={`c-platform-btn${platform === 'linkedin' ? ' active li' : ''}`}
-              onClick={() => setPlatform('linkedin')}
+              onClick={() => navigate('linkedin')}
             >
               <span className="c-platform-icon">in</span>
               LinkedIn
@@ -93,7 +106,7 @@ export default function Home() {
                   <button
                     key={item.id}
                     className={section === item.id ? 'active' : ''}
-                    onClick={() => setSection(item.id)}
+                    onClick={() => navigate('youtube', item.id)}
                   >
                     {item.label}
                   </button>
@@ -102,7 +115,7 @@ export default function Home() {
                   <button
                     key={item.id}
                     className={liSection === item.id ? 'active' : ''}
-                    onClick={() => setLiSection(item.id)}
+                    onClick={() => navigate('linkedin', undefined, item.id)}
                   >
                     {item.label}
                   </button>
@@ -114,10 +127,10 @@ export default function Home() {
         <main className="c-main">
           {platform === 'youtube' && (
             <>
-              {section === 'dashboard'   && <Dashboard pautas={pautas} onNav={setSection} />}
-              {section === 'gerador'     && <GeradorPauta pautas={pautas} onSave={savePautas} onNav={setSection} />}
-              {section === 'referencias' && <Referencias onNav={setSection} />}
-              {section === 'calendario'  && <Calendario pautas={pautas} onSave={savePautas} onNav={setSection} />}
+              {section === 'dashboard'   && <Dashboard pautas={pautas} onNav={s => navigate('youtube', s)} />}
+              {section === 'gerador'     && <GeradorPauta pautas={pautas} onSave={savePautas} onNav={s => navigate('youtube', s)} />}
+              {section === 'referencias' && <Referencias onNav={s => navigate('youtube', s)} />}
+              {section === 'calendario'  && <Calendario pautas={pautas} onSave={savePautas} onNav={s => navigate('youtube', s)} />}
               {section === 'tendencias'  && <Tendencias />}
               {section === 'config'      && <Config />}
             </>
@@ -125,7 +138,7 @@ export default function Home() {
 
           {platform === 'linkedin' && (
             <>
-              {liSection === 'li-dashboard'  && <DashboardLinkedIn posts={liPosts} onNav={setLiSection} />}
+              {liSection === 'li-dashboard'  && <DashboardLinkedIn posts={liPosts} onNav={ls => navigate('linkedin', undefined, ls)} />}
               {liSection === 'li-gerador'    && <GeradorPost onSave={addLiPost} />}
               {liSection === 'li-refs'       && <RefsLinkedIn />}
               {liSection === 'li-calendario' && <CalendarioLinkedIn posts={liPosts} onSave={saveLiPosts} />}
