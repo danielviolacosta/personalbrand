@@ -50,6 +50,7 @@ export default function GeradorPauta({ pautas, onSave, onNav }: Props) {
   const [tom, setTom] = useState('')
   const [loading, setLoading] = useState(false)
   const [output, setOutput] = useState<GeneratedPauta | null>(null)
+  const [refinamento, setRefinamento] = useState('')
   const [activeRec, setActiveRec] = useState<FieldId | null>(null)
   const recRef = useRef<SpeechRec | null>(null)
 
@@ -117,6 +118,28 @@ export default function GeradorPauta({ pautas, onSave, onNav }: Props) {
     return ctx
   }
 
+  async function callClaude(prompt: string) {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1200,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const data = await res.json()
+    if (data.error) throw new Error(data.error.message || JSON.stringify(data.error))
+    const text = (data.content || [])
+      .map((i: { text?: string }) => i.text || '')
+      .join('')
+      .trim()
+    const jsonMatch = text.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) throw new Error('Resposta inválida da IA')
+    return JSON.parse(jsonMatch[0]) as GeneratedPauta
+  }
+
   async function gerarPauta() {
     if (!registros.trim()) { showToast('Preencha os registros da semana primeiro.'); return }
 
@@ -143,31 +166,38 @@ IMPORTANTE: Responda SOMENTE com JSON puro. Sem texto antes, sem texto depois, s
 {"titulo":"titulo aqui","titulos_alt":["alt1","alt2"],"thumbnail_texto":"texto thumb","thumbnail_visual":"descricao visual","bloco1":["topico1","topico2","topico3","topico4"],"bloco2":["topico1","topico2","topico3","topico4","topico5","licao final"],"bloco3":["topico1","topico2","topico3","topico4"]}`
 
     try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 1200,
-          messages: [{ role: 'user', content: prompt }],
-        }),
-      })
-
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-
-      const data = await res.json()
-      if (data.error) throw new Error(data.error.message || JSON.stringify(data.error))
-
-      const text = (data.content || [])
-        .map((i: { text?: string }) => i.text || '')
-        .join('')
-        .trim()
-      const jsonMatch = text.match(/\{[\s\S]*\}/)
-      if (!jsonMatch) throw new Error('Resposta inválida da IA')
-
-      setOutput(JSON.parse(jsonMatch[0]))
+      setOutput(await callClaude(prompt))
     } catch (err) {
       showToast('Erro ao gerar: ' + (err instanceof Error ? err.message : 'Erro desconhecido'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function refinarPauta() {
+    if (!output) return
+    if (!refinamento.trim()) { showToast('Descreva os ajustes que deseja fazer.'); return }
+
+    setLoading(true)
+
+    const prompt = `Você é especialista em criação de conteúdo para YouTube no estilo "building in public" / vlog de empreendedor.
+
+Você gerou a seguinte pauta anteriormente:
+${JSON.stringify(output, null, 2)}
+
+O criador quer os seguintes ajustes:
+${refinamento}
+
+Mantenha o que está bom e aplique os ajustes solicitados. Preserve o formato narrativo e os tópicos de script falado.
+
+IMPORTANTE: Responda SOMENTE com JSON puro. Sem texto antes, sem texto depois, sem blocos de código, sem markdown. Apenas o objeto JSON:
+{"titulo":"titulo aqui","titulos_alt":["alt1","alt2"],"thumbnail_texto":"texto thumb","thumbnail_visual":"descricao visual","bloco1":["topico1","topico2","topico3","topico4"],"bloco2":["topico1","topico2","topico3","topico4","topico5","licao final"],"bloco3":["topico1","topico2","topico3","topico4"]}`
+
+    try {
+      setOutput(await callClaude(prompt))
+      setRefinamento('')
+    } catch (err) {
+      showToast('Erro ao refinar: ' + (err instanceof Error ? err.message : 'Erro desconhecido'))
     } finally {
       setLoading(false)
     }
@@ -194,6 +224,7 @@ IMPORTANTE: Responda SOMENTE com JSON puro. Sem texto antes, sem texto depois, s
     setAprendizado('')
     setTom('')
     setOutput(null)
+    setRefinamento('')
   }
 
   const fields: { id: FieldId; label: string; placeholder: string; tall?: boolean }[] = [
@@ -302,6 +333,19 @@ IMPORTANTE: Responda SOMENTE com JSON puro. Sem texto antes, sem texto depois, s
           <div className="c-out-section">
             <h4 className="c-out-label">Sugestão visual de thumbnail</h4>
             <div className="c-out-text">{output.thumbnail_visual}</div>
+          </div>
+
+          <div className="c-refine-box">
+            <label className="c-label">Ajustes e melhorias — diga o que quer mudar</label>
+            <textarea
+              className="c-textarea short"
+              value={refinamento}
+              onChange={e => setRefinamento(e.target.value)}
+              placeholder="Ex: deixa o título mais impactante, adiciona mais tensão no bloco 1, muda o tom pra mais leve..."
+            />
+            <button className="c-btn-refine" onClick={refinarPauta} disabled={loading}>
+              ✦ Refinar com esses ajustes
+            </button>
           </div>
 
           <div className="c-row">
