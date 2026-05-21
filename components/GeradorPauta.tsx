@@ -136,13 +136,13 @@ export default function GeradorPauta({ pautas, onSave, onNav }: Props) {
     return ctx
   }
 
-  async function callClaude(prompt: string) {
+  async function callClaude(prompt: string, maxTokens = 2000) {
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 1200,
+        max_tokens: maxTokens,
         messages: [{ role: 'user', content: prompt }],
       }),
     })
