@@ -89,9 +89,15 @@ REGRAS PARA CADA POST:
 • Linha em branco entre cada parágrafo
 • Linguagem direta, humana, sem corporativês
 • NUNCA usar travessão (—) em nenhuma parte do texto
-• CTA específico na última linha (pergunta, convite ou ação)
-• 3 a 5 hashtags ao final
 • Máximo 1200 caracteres no post (sem hashtags)
+
+CTA OBRIGATÓRIO (últimas 2 linhas, antes das hashtags):
+• Linha 1: pergunta genuína ligada ao conteúdo do post (gera comentários orgânicos)
+• Linha 2: oferta de demo suave e natural — exemplos de tom:
+  "Comenta 'DEMO' aqui que te mando um link pra conhecer o BeeMessage em 15 minutos."
+  "Quer ver isso funcionando na prática? Comenta aqui que te mostro o BeeMessage."
+  "Se quiser ver como o BeeMessage resolve isso, é só comentar que entro em contato."
+  Varie o texto a cada post. NUNCA dizer "nosso time vai te ligar" ou tom de cold call.
 
 IMAGEM BRIEF: Para cada post crie uma instrução de imagem para Canva/designer.
 Inclua: formato (1080×1080), fundo, cor/estilo, texto principal em destaque, elementos visuais, mood.
@@ -189,7 +195,7 @@ export default function GeradorPost({ onSave }: { onSave: (p: LinkedInPost) => v
       const refs = getItem<RefPostLinkedIn[]>('liRefs', [])
       const refSnippet = refs.slice(0, 2).map(r => r.conteudo.slice(0, 300)).join('\n---\n')
 
-      const regras = 'Regras: NUNCA usar travessão (—). Hook nas 2 primeiras linhas. Linguagem direta. CTA. Máx 1200 chars.'
+      const regras = 'Regras: NUNCA usar travessão (—). Hook nas 2 primeiras linhas. Linguagem direta. Máx 1200 chars. CTA final: pergunta genuína + oferta de demo suave do BeeMessage (ex: "Comenta DEMO que te mando um link pra conhecer o BeeMessage em 15 minutos"). Nunca usar tom de cold call.'
 
     const prompt = instructions?.trim()
         ? `Refine este post LinkedIn aplicando os ajustes solicitados.
