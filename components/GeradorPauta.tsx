@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import type { Pauta, Section } from '@/lib/types'
-import { getItem } from '@/lib/storage'
+import { getItem, setItem } from '@/lib/storage'
 import { weekLabel } from '@/lib/utils'
 import { useToast } from '@/lib/toast-context'
 
@@ -43,16 +43,32 @@ interface SpeechRec {
   stop(): void
 }
 
+const DRAFT_KEY = 'geradorDraft'
+
+interface GeradorDraft {
+  registros: string
+  aprendizado: string
+  tom: string
+  output: GeneratedPauta | null
+}
+
 export default function GeradorPauta({ pautas, onSave, onNav }: Props) {
   const { showToast } = useToast()
-  const [registros, setRegistros] = useState('')
-  const [aprendizado, setAprendizado] = useState('')
-  const [tom, setTom] = useState('')
+
+  const draft = getItem<GeradorDraft>(DRAFT_KEY, { registros: '', aprendizado: '', tom: '', output: null })
+
+  const [registros, setRegistros] = useState(draft.registros)
+  const [aprendizado, setAprendizado] = useState(draft.aprendizado)
+  const [tom, setTom] = useState(draft.tom)
   const [loading, setLoading] = useState(false)
-  const [output, setOutput] = useState<GeneratedPauta | null>(null)
+  const [output, setOutput] = useState<GeneratedPauta | null>(draft.output)
   const [refinamento, setRefinamento] = useState('')
   const [activeRec, setActiveRec] = useState<FieldId | null>(null)
   const recRef = useRef<SpeechRec | null>(null)
+
+  useEffect(() => {
+    setItem<GeradorDraft>(DRAFT_KEY, { registros, aprendizado, tom, output })
+  }, [registros, aprendizado, tom, output])
 
   const setters: Record<FieldId, (v: string) => void> = {
     registros: setRegistros,
@@ -246,6 +262,7 @@ IMPORTANTE: Responda SOMENTE com JSON puro. Sem texto antes, sem texto depois, s
     setTom('')
     setOutput(null)
     setRefinamento('')
+    setItem<GeradorDraft>(DRAFT_KEY, { registros: '', aprendizado: '', tom: '', output: null })
   }
 
   const fields: { id: FieldId; label: string; placeholder: string; tall?: boolean }[] = [
