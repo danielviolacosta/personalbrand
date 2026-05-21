@@ -1130,6 +1130,45 @@
   margin-top: 4px;
 }
 
+/* ===== LINKEDIN REFS — URL + ANALYZE ===== */
+.c-li-ref-url-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.c-li-ref-url-row .c-input { flex: 1; }
+.c-li-ref-url-hint {
+  font-size: 11px;
+  color: var(--c-muted);
+  margin-top: 5px;
+  font-family: var(--font-mono), 'DM Mono', monospace;
+}
+.c-li-ref-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 18px 0 4px;
+  color: var(--c-muted2);
+  font-size: 11px;
+  font-family: var(--font-mono), 'DM Mono', monospace;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.c-li-ref-divider::before,
+.c-li-ref-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--c-border);
+}
+.c-btn-analyze {
+  width: 100%;
+  text-align: center;
+  justify-content: center;
+  font-size: 12px;
+  padding: 11px 16px;
+}
+
 /* ===== LINKEDIN REFERENCES LIST ===== */
 .c-li-ref-list {
   display: flex;
