@@ -22,7 +22,8 @@ interface GeneratedPauta {
   bloco3: string[]
 }
 
-type FieldId = 'registros' | 'aprendizado' | 'tom' | 'refinamento'
+type GeradorMode = 'registros' | 'tema'
+type FieldId = 'registros' | 'aprendizado' | 'tom' | 'tema' | 'angulo' | 'refinamento'
 
 interface SpeechRecResult {
   readonly isFinal: boolean
@@ -46,37 +47,53 @@ interface SpeechRec {
 const DRAFT_KEY = 'geradorDraft'
 
 interface GeradorDraft {
+  mode: GeradorMode
   registros: string
   aprendizado: string
   tom: string
+  tema: string
+  angulo: string
   output: GeneratedPauta | null
 }
 
 export default function GeradorPauta({ pautas, onSave, onNav }: Props) {
   const { showToast } = useToast()
 
-  const draft = getItem<GeradorDraft>(DRAFT_KEY, { registros: '', aprendizado: '', tom: '', output: null })
+  const draft = getItem<GeradorDraft>(DRAFT_KEY, {
+    mode: 'registros',
+    registros: '',
+    aprendizado: '',
+    tom: '',
+    tema: '',
+    angulo: '',
+    output: null,
+  })
 
-  const [registros, setRegistros] = useState(draft.registros)
-  const [aprendizado, setAprendizado] = useState(draft.aprendizado)
-  const [tom, setTom] = useState(draft.tom)
-  const [loading, setLoading] = useState(false)
-  const [output, setOutput] = useState<GeneratedPauta | null>(draft.output)
-  const [refinamento, setRefinamento] = useState('')
-  const [activeRec, setActiveRec] = useState<FieldId | null>(null)
+  const [mode,       setMode]       = useState<GeradorMode>(draft.mode)
+  const [registros,  setRegistros]  = useState(draft.registros)
+  const [aprendizado,setAprendizado]= useState(draft.aprendizado)
+  const [tom,        setTom]        = useState(draft.tom)
+  const [tema,       setTema]       = useState(draft.tema)
+  const [angulo,     setAngulo]     = useState(draft.angulo)
+  const [loading,    setLoading]    = useState(false)
+  const [output,     setOutput]     = useState<GeneratedPauta | null>(draft.output)
+  const [refinamento,setRefinamento]= useState('')
+  const [activeRec,  setActiveRec]  = useState<FieldId | null>(null)
   const recRef = useRef<SpeechRec | null>(null)
 
   useEffect(() => {
-    setItem<GeradorDraft>(DRAFT_KEY, { registros, aprendizado, tom, output })
-  }, [registros, aprendizado, tom, output])
+    setItem<GeradorDraft>(DRAFT_KEY, { mode, registros, aprendizado, tom, tema, angulo, output })
+  }, [mode, registros, aprendizado, tom, tema, angulo, output])
 
   const setters: Record<FieldId, (v: string) => void> = {
-    registros: setRegistros,
+    registros:   setRegistros,
     aprendizado: setAprendizado,
-    tom: setTom,
+    tom:         setTom,
+    tema:        setTema,
+    angulo:      setAngulo,
     refinamento: setRefinamento,
   }
-  const values: Record<FieldId, string> = { registros, aprendizado, tom, refinamento }
+  const values: Record<FieldId, string> = { registros, aprendizado, tom, tema, angulo, refinamento }
 
   const toggleMic = useCallback(
     (fieldId: FieldId) => {
@@ -119,7 +136,7 @@ export default function GeradorPauta({ pautas, onSave, onNav }: Props) {
       rec.start()
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [activeRec, showToast, registros, aprendizado, tom, refinamento]
+    [activeRec, showToast, registros, aprendizado, tom, tema, angulo, refinamento]
   )
 
   function buildYtContext(): string {
@@ -134,6 +151,76 @@ export default function GeradorPauta({ pautas, onSave, onNav }: Props) {
       sorted.slice(0, 5).forEach(v => { ctx += `  - "${v.title}" — ${v.views.toLocaleString()} views\n` })
     }
     return ctx
+  }
+
+  const TITULO_RULES = `TÍTULOS — REGRAS OBRIGATÓRIAS:
+Gere 1 título principal + 2 alternativos. Cada título deve usar uma fórmula diferente dos outros:
+• Resultado específico + obstáculo: "Como [resultado concreto] mesmo com [dificuldade real]"
+• Momento de virada: "O dia em que [evento específico] mudou tudo no meu [negócio/projeto]"
+• Contraintuitivo: "Por que eu [decisão inesperada] — e faria de novo"
+• Antes/depois com dado: "De [estado A] a [estado B]: o que ninguém te conta sobre [tema]"
+• Tensão direta: "[Ação tomada]. Aconteceu [resultado inesperado]. Aprendi [lição]"
+• Revelação interna: "A coisa que eu estava evitando encarar no meu [negócio/produto]"
+• Número + impacto: "[N] erros / decisões / aprendizados que [consequência específica]"
+
+Regras de qualidade para TODOS os títulos:
+- Entre 6 e 12 palavras — sem enrolação
+- Específico: inclua número, valor, tempo ou resultado concreto sempre que possível
+- Tensão emocional que faça o espectador precisar saber o que aconteceu
+- "POV:" só se for genuinamente o formato mais impactante para ESSA história — não como padrão
+- Sem clickbait: o vídeo deve entregar exatamente o que o título promete`
+
+  const JSON_SCHEMA = `{"titulo":"titulo aqui","titulos_alt":["alt1","alt2"],"thumbnail_texto":"texto thumb","thumbnail_visual":"descricao visual","bloco1":["topico1","topico2","topico3","topico4"],"bloco2":["topico1","topico2","topico3","topico4","topico5","licao final"],"bloco3":["topico1","topico2","topico3","topico4"]}`
+
+  function buildPromptRegistros() {
+    return `Você é especialista em criação de conteúdo para YouTube no nicho empreendedorismo / building in public / vlog de fundador.
+
+VÍDEOS DE MAIOR PERFORMANCE DAS REFERÊNCIAS DO CRIADOR (analise os padrões de título que geraram mais views):
+${buildYtContext()}
+
+Estude esses títulos: identifique o que têm em comum (tensão, especificidade, resultado, curiosidade) e use esses PADRÕES — não os formatos em si — para criar títulos originais e impactantes.
+
+${TITULO_RULES}
+
+O vídeo deve ter 15-20 minutos com TRÊS BLOCOS narrativos:
+- BLOCO 1 (4-5 min): Hook — abre no momento mais tenso/curioso da história
+- BLOCO 2 (6-8 min): História + Ensinamento — narrativa completa, lição no final
+- BLOCO 3 (5-7 min): Registro de Rotina — bastidores reais da semana, processo, autenticidade
+
+Cada bloco = script em tópicos para contar FALADO como história.
+
+REGISTROS DA SEMANA: ${registros}
+APRENDIZADO: ${aprendizado || 'Deduzir dos registros'}
+TOM: ${tom || 'Autêntico, direto'}
+
+IMPORTANTE: Responda SOMENTE com JSON puro. Sem texto antes, sem texto depois, sem blocos de código, sem markdown. Apenas o objeto JSON:
+${JSON_SCHEMA}`
+  }
+
+  function buildPromptTema() {
+    return `Você é especialista em criação de conteúdo para YouTube no nicho empreendedorismo / building in public / vlog de fundador.
+
+VÍDEOS DE MAIOR PERFORMANCE DAS REFERÊNCIAS DO CRIADOR (analise os padrões de título que geraram mais views):
+${buildYtContext()}
+
+Estude esses títulos: identifique o que têm em comum (tensão, especificidade, resultado, curiosidade) e use esses PADRÕES — não os formatos em si — para criar títulos originais e impactantes.
+
+${TITULO_RULES}
+
+O criador quer gravar um vídeo RÁPIDO sobre um tema específico — sem roteiro de semana, sem bastidores de rotina. É um vídeo mais focado, direto ao ponto, baseado exclusivamente no tema.
+
+O vídeo deve ter 10-15 minutos com TRÊS BLOCOS:
+- BLOCO 1 (3-4 min): Hook — abre no ponto mais curioso, provocativo ou contra-intuitivo do tema. Faça o espectador precisar continuar assistindo.
+- BLOCO 2 (5-7 min): Desenvolvimento — o que o criador pensa/sabe/viveu sobre o tema. Argumentos, exemplos reais, perspectiva única do empreendedor.
+- BLOCO 3 (3-4 min): Conclusão prática — o que fazer com isso, aprendizado ou chamada para reflexão. Pode incluir CTA suave para o canal/produto.
+
+Cada bloco = script em tópicos para contar FALADO como história/opinião.
+
+TEMA DO VÍDEO: ${tema}
+ÂNGULO / PERSPECTIVA: ${angulo || 'Explorar o ângulo mais impactante e autêntico para um empreendedor'}
+
+IMPORTANTE: Responda SOMENTE com JSON puro. Sem texto antes, sem texto depois, sem blocos de código, sem markdown. Apenas o objeto JSON:
+${JSON_SCHEMA}`
   }
 
   async function callClaude(prompt: string, maxTokens = 2000) {
@@ -159,48 +246,17 @@ export default function GeradorPauta({ pautas, onSave, onNav }: Props) {
   }
 
   async function gerarPauta() {
-    if (!registros.trim()) { showToast('Preencha os registros da semana primeiro.'); return }
+    if (mode === 'registros' && !registros.trim()) {
+      showToast('Preencha os registros da semana primeiro.'); return
+    }
+    if (mode === 'tema' && !tema.trim()) {
+      showToast('Informe o tema do vídeo primeiro.'); return
+    }
 
     setLoading(true)
     setOutput(null)
 
-    const prompt = `Você é especialista em criação de conteúdo para YouTube no nicho empreendedorismo / building in public / vlog de fundador.
-
-VÍDEOS DE MAIOR PERFORMANCE DAS REFERÊNCIAS DO CRIADOR (analise os padrões de título que geraram mais views):
-${buildYtContext()}
-
-Estude esses títulos: identifique o que têm em comum (tensão, especificidade, resultado, curiosidade) e use esses PADRÕES — não os formatos em si — para criar títulos originais e impactantes.
-
-TÍTULOS — REGRAS OBRIGATÓRIAS:
-Gere 1 título principal + 2 alternativos. Cada título deve usar uma fórmula diferente dos outros:
-• Resultado específico + obstáculo: "Como [resultado concreto] mesmo com [dificuldade real]"
-• Momento de virada: "O dia em que [evento específico] mudou tudo no meu [negócio/projeto]"
-• Contraintuitivo: "Por que eu [decisão inesperada] — e faria de novo"
-• Antes/depois com dado: "De [estado A] a [estado B]: o que ninguém te conta sobre [tema]"
-• Tensão direta: "[Ação tomada]. Aconteceu [resultado inesperado]. Aprendi [lição]"
-• Revelação interna: "A coisa que eu estava evitando encarar no meu [negócio/produto]"
-• Número + impacto: "[N] erros / decisões / aprendizados que [consequência específica]"
-
-Regras de qualidade para TODOS os títulos:
-- Entre 6 e 12 palavras — sem enrolação
-- Específico: inclua número, valor, tempo ou resultado concreto sempre que possível
-- Tensão emocional que faça o espectador precisar saber o que aconteceu
-- "POV:" só se for genuinamente o formato mais impactante para ESSA história — não como padrão
-- Sem clickbait: o vídeo deve entregar exatamente o que o título promete
-
-O vídeo deve ter 15-20 minutos com TRÊS BLOCOS narrativos:
-- BLOCO 1 (4-5 min): Hook — abre no momento mais tenso/curioso da história
-- BLOCO 2 (6-8 min): História + Ensinamento — narrativa completa, lição no final
-- BLOCO 3 (5-7 min): Registro de Rotina — bastidores reais da semana, processo, autenticidade
-
-Cada bloco = script em tópicos para contar FALADO como história.
-
-REGISTROS DA SEMANA: ${registros}
-APRENDIZADO: ${aprendizado || 'Deduzir dos registros'}
-TOM: ${tom || 'Autêntico, direto'}
-
-IMPORTANTE: Responda SOMENTE com JSON puro. Sem texto antes, sem texto depois, sem blocos de código, sem markdown. Apenas o objeto JSON:
-{"titulo":"titulo aqui","titulos_alt":["alt1","alt2"],"thumbnail_texto":"texto thumb","thumbnail_visual":"descricao visual","bloco1":["topico1","topico2","topico3","topico4"],"bloco2":["topico1","topico2","topico3","topico4","topico5","licao final"],"bloco3":["topico1","topico2","topico3","topico4"]}`
+    const prompt = mode === 'registros' ? buildPromptRegistros() : buildPromptTema()
 
     try {
       setOutput(await callClaude(prompt))
@@ -228,7 +284,7 @@ ${refinamento}
 Mantenha o que está bom e aplique os ajustes solicitados. Preserve o formato narrativo e os tópicos de script falado.
 
 IMPORTANTE: Responda SOMENTE com JSON puro. Sem texto antes, sem texto depois, sem blocos de código, sem markdown. Apenas o objeto JSON:
-{"titulo":"titulo aqui","titulos_alt":["alt1","alt2"],"thumbnail_texto":"texto thumb","thumbnail_visual":"descricao visual","bloco1":["topico1","topico2","topico3","topico4"],"bloco2":["topico1","topico2","topico3","topico4","topico5","licao final"],"bloco3":["topico1","topico2","topico3","topico4"]}`
+${JSON_SCHEMA}`
 
     try {
       setOutput(await callClaude(prompt))
@@ -260,12 +316,23 @@ IMPORTANTE: Responda SOMENTE com JSON puro. Sem texto antes, sem texto depois, s
     setRegistros('')
     setAprendizado('')
     setTom('')
+    setTema('')
+    setAngulo('')
     setOutput(null)
     setRefinamento('')
-    setItem<GeradorDraft>(DRAFT_KEY, { registros: '', aprendizado: '', tom: '', output: null })
+    setItem<GeradorDraft>(DRAFT_KEY, {
+      mode,
+      registros: '',
+      aprendizado: '',
+      tom: '',
+      tema: '',
+      angulo: '',
+      output: null,
+    })
   }
 
-  const fields: { id: FieldId; label: string; placeholder: string; tall?: boolean }[] = [
+  // ── Field configs per mode ────────────────────────────────────────────────
+  const fieldsRegistros: { id: FieldId; label: string; placeholder: string; tall?: boolean }[] = [
     {
       id: 'registros',
       label: 'Seus registros desta semana — fale ou escreva',
@@ -285,15 +352,50 @@ IMPORTANTE: Responda SOMENTE com JSON puro. Sem texto antes, sem texto depois, s
     },
   ]
 
+  const fieldsTema: { id: FieldId; label: string; placeholder: string; tall?: boolean }[] = [
+    {
+      id: 'tema',
+      label: 'Tema ou ideia do vídeo — fale ou escreva',
+      placeholder:
+        'Ex: "Por que a maioria dos empreendedores desiste antes de ver resultado", "Como estruturei meu processo de vendas do zero"...',
+      tall: true,
+    },
+    {
+      id: 'angulo',
+      label: 'Ângulo ou perspectiva que quer explorar (opcional)',
+      placeholder: 'Ex: falar sobre o erro que cometi, dar uma opinião polêmica, focar no lado prático...',
+    },
+  ]
+
+  const activeFields = mode === 'registros' ? fieldsRegistros : fieldsTema
+
   return (
     <div>
       <h2>Gerar Pauta + Script</h2>
       <p className="c-subtitle">
-        Fale ou escreva seus registros → receba pauta + script em tópicos para contar como história
+        {mode === 'registros'
+          ? 'Fale ou escreva seus registros → receba pauta + script em tópicos para contar como história'
+          : 'Informe o tema → receba pauta + script focado para gravar agora'}
       </p>
 
+      {/* ── Mode toggle ── */}
+      <div className="c-mode-switch" style={{ marginBottom: 20 }}>
+        <button
+          className={`c-mode-btn${mode === 'registros' ? ' active' : ''}`}
+          onClick={() => { setMode('registros'); setOutput(null) }}
+        >
+          📋 Baseado em registros
+        </button>
+        <button
+          className={`c-mode-btn${mode === 'tema' ? ' active' : ''}`}
+          onClick={() => { setMode('tema'); setOutput(null) }}
+        >
+          💡 Tema rápido
+        </button>
+      </div>
+
       <div className="c-card">
-        {fields.map(({ id, label, placeholder, tall }) => (
+        {activeFields.map(({ id, label, placeholder, tall }) => (
           <div key={id}>
             <label className="c-label">{label}</label>
             <div className="c-field-wrap">
@@ -319,7 +421,7 @@ IMPORTANTE: Responda SOMENTE com JSON puro. Sem texto antes, sem texto depois, s
 
         <div className="c-row">
           <button className="c-btn" onClick={gerarPauta} disabled={loading}>
-            ⚡ Gerar pauta + script
+            {mode === 'registros' ? '⚡ Gerar pauta + script' : '⚡ Gerar script do tema'}
           </button>
           <button className="c-btn-ghost" onClick={limpar}>
             Limpar
@@ -354,18 +456,31 @@ IMPORTANTE: Responda SOMENTE com JSON puro. Sem texto antes, sem texto depois, s
           </div>
 
           <div className="c-out-section">
-            <h4 className="c-out-label">Script — Bloco 01: Entretenimento / Hook (4–5 min)</h4>
+            <h4 className="c-out-label">
+              {mode === 'registros'
+                ? 'Script — Bloco 01: Entretenimento / Hook (4–5 min)'
+                : 'Script — Bloco 01: Hook (3–4 min)'}
+            </h4>
             <ScriptBloco topicos={output.bloco1} accent="e1" label="01 — Como abrir o vídeo" />
           </div>
 
           <div className="c-out-section">
-            <h4 className="c-out-label">Script — Bloco 02: História + Ensinamento (6–8 min)</h4>
+            <h4 className="c-out-label">
+              {mode === 'registros'
+                ? 'Script — Bloco 02: História + Ensinamento (6–8 min)'
+                : 'Script — Bloco 02: Desenvolvimento (5–7 min)'}
+            </h4>
             <ScriptBloco topicos={output.bloco2} accent="e2" label="02 — Narrativa e lição" />
           </div>
 
           <div className="c-out-section">
-            <h4 className="c-out-label">Script — Bloco 03: Registro de Rotina (5–7 min)</h4>
-            <ScriptBloco topicos={output.bloco3} accent="e3" label="03 — Bastidores reais" />
+            <h4 className="c-out-label">
+              {mode === 'registros'
+                ? 'Script — Bloco 03: Registro de Rotina (5–7 min)'
+                : 'Script — Bloco 03: Conclusão prática (3–4 min)'}
+            </h4>
+            <ScriptBloco topicos={output.bloco3} accent="e3"
+              label={mode === 'registros' ? '03 — Bastidores reais' : '03 — Conclusão e CTA'} />
           </div>
 
           <div className="c-out-section">

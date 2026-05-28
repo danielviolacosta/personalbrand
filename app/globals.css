@@ -544,6 +544,36 @@
 .c-btn-refine:hover { background: var(--c-accent3); color: #fff; }
 .c-btn-refine:disabled { opacity: 0.4; cursor: not-allowed; }
 
+/* Mode switch (Registros / Tema rápido) */
+.c-mode-switch {
+  display: inline-flex;
+  gap: 0;
+  background: var(--c-bg3);
+  border: 1px solid var(--c-border);
+  border-radius: 8px;
+  padding: 4px;
+}
+.c-mode-btn {
+  background: none;
+  border: none;
+  color: var(--c-muted);
+  font-family: var(--font-mono), 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.6px;
+  padding: 7px 18px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all .2s;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.c-mode-btn:hover { color: var(--c-text); }
+.c-mode-btn.active {
+  background: var(--c-accent);
+  color: #000;
+  font-weight: 700;
+}
+
 /* Script */
 .c-script-bloco {
   background: var(--c-bg2);
