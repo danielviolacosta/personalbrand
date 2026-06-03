@@ -974,6 +974,102 @@
   50% { opacity: 0.4; }
 }
 
+/* ── Manual add button & form ─────────────────────────────────────────────── */
+.c-cal-add-btn {
+  margin-left: auto;
+  background: none;
+  border: 1px solid var(--c-border);
+  color: var(--c-muted);
+  font-size: 14px;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .15s;
+  flex-shrink: 0;
+}
+.c-cal-add-btn:hover {
+  border-color: var(--c-accent);
+  color: var(--c-accent);
+  background: color-mix(in srgb, var(--c-accent) 8%, transparent);
+}
+
+.c-cal-manual-form {
+  margin: 8px 0 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  background: var(--c-bg3);
+  border-radius: 8px;
+  border: 1px solid var(--c-border);
+}
+.c-cal-manual-input {
+  background: var(--c-bg2);
+  border: 1px solid var(--c-border);
+  border-radius: 6px;
+  color: var(--c-text);
+  font-size: 13px;
+  padding: 8px 12px;
+  width: 100%;
+  outline: none;
+  font-family: var(--font-sans), sans-serif;
+  transition: border-color .15s;
+}
+.c-cal-manual-input:focus { border-color: var(--c-accent); }
+.c-cal-manual-input::placeholder { color: var(--c-muted2); }
+
+.c-cal-manual-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.c-cal-manual-select {
+  background: var(--c-bg2);
+  border: 1px solid var(--c-border);
+  border-radius: 6px;
+  color: var(--c-text);
+  font-size: 11px;
+  padding: 5px 8px;
+  cursor: pointer;
+  font-family: var(--font-mono), monospace;
+  outline: none;
+}
+.c-cal-manual-status {
+  display: flex;
+  gap: 4px;
+}
+.c-cal-manual-status-btn {
+  background: none;
+  border: 1px solid var(--c-border);
+  border-radius: 5px;
+  color: var(--c-muted);
+  font-size: 11px;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-family: var(--font-mono), monospace;
+  transition: all .15s;
+}
+.c-cal-manual-status-btn.active-pub {
+  background: color-mix(in srgb, var(--c-green) 15%, transparent);
+  border-color: var(--c-green);
+  color: var(--c-green);
+}
+.c-cal-manual-status-btn.active-draft {
+  background: color-mix(in srgb, var(--c-accent) 12%, transparent);
+  border-color: var(--c-accent);
+  color: var(--c-accent);
+}
+.c-cal-manual-actions {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
 /* Trends */
 .c-trend-item {
   display: flex;

@@ -26,6 +26,8 @@ const TIPO_COLOR: Record<PostTipo, string> = {
   video_demo:  'li-t-video',
 }
 
+const ALL_TIPOS = Object.keys(TIPO_LABEL) as PostTipo[]
+
 export default function CalendarioLinkedIn({
   posts,
   onSave,
@@ -34,14 +36,46 @@ export default function CalendarioLinkedIn({
   onSave: (next: LinkedInPost[]) => void
 }) {
   const { showToast } = useToast()
-  const [dragging, setDragging] = useState<string | null>(null)
-  const [dragOver, setDragOver] = useState<string | null>(null)
-  const [selected, setSelected] = useState<LinkedInPost | null>(null)
+  const [dragging,    setDragging]    = useState<string | null>(null)
+  const [dragOver,    setDragOver]    = useState<string | null>(null)
+  const [selected,    setSelected]    = useState<LinkedInPost | null>(null)
+
+  // ── Manual add state ──────────────────────────────────────────────────────
+  const [addingWeek,  setAddingWeek]  = useState<string | null>(null)
+  const [manualTitulo,setManualTitulo]= useState('')
+  const [manualTipo,  setManualTipo]  = useState<PostTipo>('personal')
+  const [manualStatus,setManualStatus]= useState<'publicado' | 'rascunho'>('publicado')
 
   const weeks = useMemo(
     () => Array.from({ length: WEEKS_SHOWN }, (_, i) => weekLabel(i - 1)),
     []
   )
+
+  function openAddForm(week: string) {
+    setAddingWeek(week)
+    setManualTitulo('')
+    setManualTipo('personal')
+    setManualStatus('publicado')
+  }
+
+  function cancelAdd() { setAddingWeek(null) }
+
+  function confirmarAdd() {
+    if (!addingWeek || !manualTitulo.trim()) {
+      showToast('Informe o título do post'); return
+    }
+    const novo: LinkedInPost = {
+      id:      Date.now().toString(),
+      conteudo: manualTitulo.trim(),
+      tipo:    manualTipo,
+      status:  manualStatus,
+      semana:  addingWeek,
+      data:    new Date().toISOString(),
+    }
+    onSave([...posts, novo])
+    showToast(manualStatus === 'publicado' ? '✓ Post registrado como publicado!' : '✓ Post adicionado ao calendário!')
+    setAddingWeek(null)
+  }
 
   function marcarPublicado(id: string, fromModal = false) {
     const post = posts.find(p => p.id === id)
@@ -68,26 +102,22 @@ export default function CalendarioLinkedIn({
     e.preventDefault()
     if (!dragging) return
     onSave(posts.map(p => p.id === dragging ? { ...p, semana: week } : p))
-    setDragging(null)
-    setDragOver(null)
+    setDragging(null); setDragOver(null)
   }
   function onDragEnd() { setDragging(null); setDragOver(null) }
 
   const totalPosts     = posts.length
   const totalPublished = posts.filter(p => p.status === 'publicado').length
 
-  // Current-week goal stats
   const thisWeek          = useMemo(() => weekLabel(0), [])
   const thisWeekPosts     = posts.filter(p => p.semana === thisWeek)
   const thisWeekPublished = thisWeekPosts.filter(p => p.status === 'publicado').length
   const thisWeekTotal     = thisWeekPosts.length
   const weekGoalPct       = Math.min(100, Math.round((thisWeekPublished / META_SEMANAL) * 100))
 
-  // Next-week preview
   const nextWeek      = useMemo(() => weekLabel(1), [])
   const nextWeekTotal = posts.filter(p => p.semana === nextWeek).length
 
-  // Parse hashtags from post content (they're appended at the end as "#tag1 #tag2 ...")
   function parseContent(conteudo: string) {
     const lines = conteudo.split('\n')
     const lastLine = lines[lines.length - 1] ?? ''
@@ -173,11 +203,12 @@ export default function CalendarioLinkedIn({
           const goalMet        = publishedCount >= META_SEMANAL
           const isEmpty        = weekPosts.length === 0
           const isOver         = dragOver === week
+          const isAdding       = addingWeek === week
 
           return (
             <div
               key={week}
-              className={`c-cal-row${isEmpty ? ' empty' : ''}${isOver ? ' drag-over' : ''}`}
+              className={`c-cal-row${isEmpty && !isAdding ? ' empty' : ''}${isOver ? ' drag-over' : ''}`}
               onDragOver={e => onDragOver(e, week)}
               onDrop={e => onDrop(e, week)}
               onDragLeave={() => setDragOver(null)}
@@ -199,7 +230,64 @@ export default function CalendarioLinkedIn({
                 {isOver && dragging && (
                   <span className="c-cal-drop-hint">soltar aqui →</span>
                 )}
+                {/* Add manual post button */}
+                {!isAdding && (
+                  <button
+                    className="c-cal-add-btn"
+                    onClick={() => openAddForm(week)}
+                    title="Registrar post manual nesta semana"
+                  >
+                    ＋
+                  </button>
+                )}
               </div>
+
+              {/* ── Manual add form ── */}
+              {isAdding && (
+                <div className="c-cal-manual-form">
+                  <input
+                    className="c-cal-manual-input"
+                    autoFocus
+                    placeholder="Título ou descrição do post..."
+                    value={manualTitulo}
+                    onChange={e => setManualTitulo(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') confirmarAdd(); if (e.key === 'Escape') cancelAdd() }}
+                  />
+                  <div className="c-cal-manual-row">
+                    <select
+                      className="c-cal-manual-select"
+                      value={manualTipo}
+                      onChange={e => setManualTipo(e.target.value as PostTipo)}
+                    >
+                      {ALL_TIPOS.map(t => (
+                        <option key={t} value={t}>{TIPO_LABEL[t]}</option>
+                      ))}
+                    </select>
+                    <div className="c-cal-manual-status">
+                      <button
+                        className={`c-cal-manual-status-btn${manualStatus === 'publicado' ? ' active-pub' : ''}`}
+                        onClick={() => setManualStatus('publicado')}
+                      >
+                        ✓ Publicado
+                      </button>
+                      <button
+                        className={`c-cal-manual-status-btn${manualStatus === 'rascunho' ? ' active-draft' : ''}`}
+                        onClick={() => setManualStatus('rascunho')}
+                      >
+                        Rascunho
+                      </button>
+                    </div>
+                    <div className="c-cal-manual-actions">
+                      <button className="c-btn" style={{ padding: '6px 14px', fontSize: 12 }} onClick={confirmarAdd}>
+                        Salvar
+                      </button>
+                      <button className="c-btn-ghost" style={{ padding: '6px 12px', fontSize: 12 }} onClick={cancelAdd}>
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {!isEmpty && (
                 <div className="c-cal-pauta-list">
@@ -246,7 +334,7 @@ export default function CalendarioLinkedIn({
         <div className="c-card" style={{ textAlign: 'center', padding: 40, marginTop: 12, color: 'var(--c-muted)' }}>
           <div style={{ fontSize: 28, marginBottom: 10 }}>📅</div>
           <div style={{ fontSize: 14 }}>Nenhum post no calendário</div>
-          <div style={{ fontSize: 12, marginTop: 6 }}>Gere um post e clique em "Salvar no calendário"</div>
+          <div style={{ fontSize: 12, marginTop: 6 }}>Gere um post ou clique em ＋ para registrar manualmente</div>
         </div>
       )}
 
@@ -293,10 +381,7 @@ export default function CalendarioLinkedIn({
               )}
 
               <div className="c-row" style={{ marginTop: 16 }}>
-                <button
-                  className="c-btn"
-                  onClick={() => marcarPublicado(selected.id, true)}
-                >
+                <button className="c-btn" onClick={() => marcarPublicado(selected.id, true)}>
                   {selected.status === 'publicado' ? '↩ Voltar para rascunho' : '✓ Marcar como publicado'}
                 </button>
                 <button className="c-btn-ghost" onClick={() => {
