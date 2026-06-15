@@ -101,8 +101,9 @@ CTA OBRIGATÓRIO (últimas 2 linhas, antes das hashtags):
   Varie o texto a cada post. NUNCA dizer "nosso time vai te ligar" ou tom de cold call.
 
 IMAGEM BRIEF: Para cada post crie uma instrução de imagem para Canva/designer.
-Inclua: formato (1080×1080), fundo, cor/estilo, texto principal em destaque, elementos visuais, mood.
-Exemplo: "Fundo grafite escuro #1c1c1e. Texto central bold: '90% mais barato que um SDR'. Ícone WhatsApp verde à esquerda. Linha horizontal separadora em amarelo. Dark minimalista."
+Formato OBRIGATÓRIO: 1080×1350 px (proporção 4:5 portrait — padrão Instagram feed).
+Inclua: fundo, cor/estilo, texto principal em destaque, elementos visuais, mood.
+Exemplo: "1080×1350 px. Fundo grafite escuro #1c1c1e. Texto central bold: '90% mais barato que um SDR'. Ícone WhatsApp verde à esquerda. Linha horizontal separadora em amarelo. Dark minimalista."
 
 Responda SOMENTE com JSON puro (array com exatamente 3 objetos), sem texto antes ou depois:
 [
