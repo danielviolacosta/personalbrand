@@ -103,7 +103,8 @@ CTA OBRIGATÓRIO (últimas 2 linhas, antes das hashtags):
 IMAGEM BRIEF: Para cada post crie uma instrução de imagem para Canva/designer.
 Formato OBRIGATÓRIO: 1080×1350 px (proporção 4:5 portrait — padrão Instagram feed).
 Inclua: fundo, cor/estilo, texto principal em destaque, elementos visuais, mood.
-Exemplo: "1080×1350 px. Fundo grafite escuro #1c1c1e. Texto central bold: '90% mais barato que um SDR'. Ícone WhatsApp verde à esquerda. Linha horizontal separadora em amarelo. Dark minimalista."
+NÃO sugira logo, marca ou nome de produto na imagem — o visual deve ser pessoal/autoral.
+Exemplo: "1080×1350 px. Fundo grafite escuro #1c1c1e. Texto central bold: '90% mais barato que um SDR'. Linha horizontal separadora em amarelo. Dark minimalista."
 
 Responda SOMENTE com JSON puro (array com exatamente 3 objetos), sem texto antes ou depois:
 [
