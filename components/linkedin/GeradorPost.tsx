@@ -34,7 +34,7 @@ const TIPO_COLOR: Record<PostTipo, string> = {
   video_demo:  'li-t-video',
 }
 
-const ALL_TIPOS: PostTipo[] = ['dica', 'produto', 'personal', 'noticia', 'prova_social', 'video_demo']
+const ALL_TIPOS: PostTipo[] = ['dica', 'produto', 'noticia', 'prova_social', 'video_demo']
 
 const TIPO_GUIDE: Record<PostTipo, string> = {
   noticia:     'Conecte uma notícia/tendência do mercado ao problema que o produto resolve.',
