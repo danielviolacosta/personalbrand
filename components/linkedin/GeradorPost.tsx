@@ -35,7 +35,7 @@ const TIPO_COLOR: Record<PostTipo, string> = {
 }
 
 // Fixed pattern: 2 image posts + 1 video. Image pool rotates to avoid repetition.
-const IMAGE_TIPOS: PostTipo[] = ['dica', 'produto', 'noticia', 'prova_social']
+const IMAGE_TIPOS: PostTipo[] = ['dica', 'produto', 'noticia']
 
 const TIPO_GUIDE: Record<PostTipo, string> = {
   noticia:     'Conecte uma notícia/tendência do mercado ao problema que o produto resolve.',
