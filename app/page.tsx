@@ -139,7 +139,7 @@ export default function Home() {
           {platform === 'linkedin' && (
             <>
               {liSection === 'li-dashboard'  && <DashboardLinkedIn posts={liPosts} onNav={ls => navigate('linkedin', undefined, ls)} />}
-              {liSection === 'li-gerador'    && <GeradorPost onSave={addLiPost} />}
+              {liSection === 'li-gerador'    && <GeradorPost onSave={addLiPost} posts={liPosts} />}
               {liSection === 'li-refs'       && <RefsLinkedIn />}
               {liSection === 'li-calendario' && <CalendarioLinkedIn posts={liPosts} onSave={saveLiPosts} />}
               {liSection === 'li-config'     && <ConfigLinkedIn />}

@@ -142,7 +142,18 @@ Responda SOMENTE com JSON puro (array com exatamente 3 objetos), sem texto antes
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
-export default function GeradorPost({ onSave }: { onSave: (p: LinkedInPost) => void }) {
+const META_SEMANAL = 3
+
+function findNextWeek(existingPosts: LinkedInPost[]): string {
+  for (let offset = 0; offset < 12; offset++) {
+    const week = weekLabel(offset)
+    const count = existingPosts.filter(p => p.semana === week).length
+    if (count < META_SEMANAL) return week
+  }
+  return weekLabel(0)
+}
+
+export default function GeradorPost({ onSave, posts }: { onSave: (p: LinkedInPost) => void; posts: LinkedInPost[] }) {
   const { showToast } = useToast()
   const [batch, setBatch] = useState<GeneratedPost[] | null>(null)
   const [loading, setLoading] = useState(false)
@@ -253,7 +264,7 @@ ${regras}`
       conteudo: post.conteudo + '\n\n' + post.hashtags.join(' '),
       tipo: post.tipo,
       status: 'rascunho',
-      semana: weekLabel(0),
+      semana: findNextWeek(posts),
       data: new Date().toISOString(),
       imagem_brief: post.imagem_brief || undefined,
     })
