@@ -6,7 +6,7 @@ import { useToast } from '@/lib/toast-context'
 import type { LinkedInPost, PostTipo } from '@/lib/types'
 
 const WEEKS_SHOWN = 6
-const META_SEMANAL = 3
+const META_SEMANAL = 2
 
 const TIPO_LABEL: Record<PostTipo, string> = {
   noticia:     'Notícia',

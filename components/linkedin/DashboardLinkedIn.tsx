@@ -22,7 +22,7 @@ const TIPO_COLOR: Record<PostTipo, string> = {
   video_demo:  'li-t-video',
 }
 
-const META_SEMANAL = 3
+const META_SEMANAL = 2
 
 export default function DashboardLinkedIn({
   posts,
