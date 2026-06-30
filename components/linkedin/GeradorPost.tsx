@@ -34,7 +34,8 @@ const TIPO_COLOR: Record<PostTipo, string> = {
   video_demo:  'li-t-video',
 }
 
-const ALL_TIPOS: PostTipo[] = ['dica', 'produto', 'noticia', 'prova_social', 'video_demo']
+// Fixed pattern: 2 image posts + 1 video. Image pool rotates to avoid repetition.
+const IMAGE_TIPOS: PostTipo[] = ['dica', 'produto', 'noticia', 'prova_social']
 
 const TIPO_GUIDE: Record<PostTipo, string> = {
   noticia:     'Conecte uma notícia/tendência do mercado ao problema que o produto resolve.',
@@ -45,12 +46,12 @@ const TIPO_GUIDE: Record<PostTipo, string> = {
   video_demo:  'Post de acompanhamento para vídeo curto 60-90s. Hook + por que vale assistir.',
 }
 
-// Pick 3 varied tipos, prioritizing those not used recently
+// Always: 2 image posts (least-recently-used from IMAGE_TIPOS) + 1 video_demo
 function pickTipos(recentPosts: LinkedInPost[]): [PostTipo, PostTipo, PostTipo] {
   const recent = recentPosts.slice(0, 9).map(p => p.tipo)
-  const scored = ALL_TIPOS.map(t => ({ tipo: t, lastIdx: recent.lastIndexOf(t) }))
+  const scored = IMAGE_TIPOS.map(t => ({ tipo: t, lastIdx: recent.lastIndexOf(t) }))
   scored.sort((a, b) => a.lastIdx - b.lastIdx) // -1 (never used) comes first
-  return [scored[0].tipo, scored[1].tipo, scored[2].tipo]
+  return [scored[0].tipo, scored[1].tipo, 'video_demo']
 }
 
 // Build messages array with optional vision context from ref images
