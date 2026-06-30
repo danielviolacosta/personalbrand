@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from 'redis'
 
-const REDIS_URL   = process.env.UPSTASH_REDIS_REST_URL
-const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN
-
-// Keys that are shared across all users/browsers
+// Keys shared across all browsers/users
 export const SHARED_KEYS = [
   'pautas',
   'liPosts',
@@ -14,30 +12,27 @@ export const SHARED_KEYS = [
   'ytRefs',
 ]
 
-async function redisCmd(command: unknown[]) {
-  const res = await fetch(REDIS_URL!, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${REDIS_TOKEN}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(command),
-    cache: 'no-store',
-  })
-  return res.json()
+let client: ReturnType<typeof createClient> | null = null
+
+async function getClient() {
+  if (!client || !client.isOpen) {
+    client = createClient({ url: process.env.REDIS_URL })
+    client.on('error', () => { client = null })
+    await client.connect()
+  }
+  return client
 }
 
 // GET /api/store → returns all shared key-value pairs
 export async function GET() {
-  if (!REDIS_URL || !REDIS_TOKEN) return NextResponse.json({})
-
   try {
-    const { result } = await redisCmd(['MGET', ...SHARED_KEYS])
+    const redis = await getClient()
+    const values = await redis.mGet(SHARED_KEYS)
     const data: Record<string, unknown> = {}
     SHARED_KEYS.forEach((key, i) => {
-      const raw = result?.[i]
+      const raw = values[i]
       if (raw != null) {
-        try { data[key] = JSON.parse(raw as string) } catch { data[key] = raw }
+        try { data[key] = JSON.parse(raw) } catch { data[key] = raw }
       }
     })
     return NextResponse.json(data)
@@ -48,12 +43,11 @@ export async function GET() {
 
 // POST /api/store { key, value } → saves one key
 export async function POST(req: NextRequest) {
-  if (!REDIS_URL || !REDIS_TOKEN) return NextResponse.json({ ok: false })
-
   try {
     const { key, value } = await req.json()
     if (!SHARED_KEYS.includes(key)) return NextResponse.json({ ok: false, error: 'key not allowed' })
-    await redisCmd(['SET', key, JSON.stringify(value)])
+    const redis = await getClient()
+    await redis.set(key, JSON.stringify(value))
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ ok: false })
