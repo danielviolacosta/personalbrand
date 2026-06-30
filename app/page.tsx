@@ -39,17 +39,30 @@ export default function Home() {
   const [liSection, setLiSection]   = useState<LISection>('li-dashboard')
   const [pautas,   setPautas]       = useState<Pauta[]>([])
   const [liPosts,  setLiPosts]      = useState<LinkedInPost[]>([])
+  const [synced,   setSynced]       = useState(false)
 
   useEffect(() => {
-    setPautas(getItem('pautas', []))
-    setLiPosts(getItem('liPosts', []))
-    // Restore last active platform + section
-    const savedPlatform = getItem<Platform>('nav_platform', 'youtube')
-    const savedSection  = getItem<Section>('nav_section', 'dashboard')
-    const savedLiSection = getItem<LISection>('nav_liSection', 'li-dashboard')
-    setPlatform(savedPlatform)
-    setSection(savedSection)
-    setLiSection(savedLiSection)
+    // Load shared data from server first, then fall back to localStorage
+    fetch('/api/store')
+      .then(r => r.json())
+      .then((serverData: Record<string, unknown>) => {
+        // Populate localStorage with server data (server is source of truth)
+        Object.entries(serverData).forEach(([key, value]) => {
+          localStorage.setItem(key, JSON.stringify(value))
+        })
+      })
+      .catch(() => {}) // offline: use whatever is in localStorage
+      .finally(() => {
+        setPautas(getItem('pautas', []))
+        setLiPosts(getItem('liPosts', []))
+        const savedPlatform  = getItem<Platform>('nav_platform', 'youtube')
+        const savedSection   = getItem<Section>('nav_section', 'dashboard')
+        const savedLiSection = getItem<LISection>('nav_liSection', 'li-dashboard')
+        setPlatform(savedPlatform)
+        setSection(savedSection)
+        setLiSection(savedLiSection)
+        setSynced(true)
+      })
   }, [])
 
   function navigate(p: Platform, s?: Section, ls?: LISection) {
@@ -125,7 +138,14 @@ export default function Home() {
         </header>
 
         <main className="c-main">
-          {platform === 'youtube' && (
+          {!synced && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--c-muted)', fontSize: 13, padding: '60px 0', justifyContent: 'center' }}>
+              <div className="c-spinner" />
+              Sincronizando dados…
+            </div>
+          )}
+
+          {synced && platform === 'youtube' && (
             <>
               {section === 'dashboard'   && <Dashboard pautas={pautas} onNav={s => navigate('youtube', s)} />}
               {section === 'gerador'     && <GeradorPauta pautas={pautas} onSave={savePautas} onNav={s => navigate('youtube', s)} />}
@@ -136,7 +156,7 @@ export default function Home() {
             </>
           )}
 
-          {platform === 'linkedin' && (
+          {synced && platform === 'linkedin' && (
             <>
               {liSection === 'li-dashboard'  && <DashboardLinkedIn posts={liPosts} onNav={ls => navigate('linkedin', undefined, ls)} />}
               {liSection === 'li-gerador'    && <GeradorPost onSave={addLiPost} posts={liPosts} />}
